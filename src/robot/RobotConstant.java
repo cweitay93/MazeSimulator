@@ -75,7 +75,7 @@ public final class RobotConstant {
 	
 	// Robot Exploration Configuration
 	public static final int DEFAULT_STEPS_PER_SECOND = 10;
-	public static final int DEFAULT_COVERAGE_LIMIT = 100;
+	public static final int DEFAULT_COVERAGE_LIMIT = 50;
 	public static final int DEFAULT_TIME_LIMIT = 360;
 	
 	

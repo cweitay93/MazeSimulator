@@ -29,9 +29,8 @@ public class MapUI extends Map {
     private int _mapHeight = 0;
     
     // Mid Point
-    
-    private int midRow = 0;
-    private int midCol = 0;
+    public static int midRow = 0;
+    public static int midCol = 0;
 
     // For rendering the map efficiently
     private MapGrid[][] _mapGrids = null;
@@ -120,8 +119,8 @@ public class MapUI extends Map {
         midCol = col;
     }
     
-    public boolean isMidZone(int row, int col) {
-        return (row >= midRow && row <= midRow + 2 && col >= midCol && col <= midCol + 2);
+    public int getMidIndex(){
+        return (midRow * 15) + midCol;
     }
 
     private void addObstacle(int row, int col) {
@@ -200,7 +199,7 @@ public class MapUI extends Map {
                     gridColor = Constants.C_START;
                 } else if (isGoalZone(mapRow, mapCol)) {
                     gridColor = Constants.C_GOAL;
-                } else if (isMidZone(mapRow,mapCol)){
+                } else if (isMidZone(mapRow,mapCol, midRow, midCol)){
                     gridColor = Constants.C_MID;
                 } else if (_grids[mapRow][mapCol].isObstacle()) {
                     gridColor = Constants.C_OBSTACLE;

@@ -63,10 +63,10 @@ public class Robot {
     // Elapsed time for the exploration phase (in milliseconds)
     private transient int _elapsedExplorationTime = 0;
     private transient int _elapsedShortestPathTime = 0;
-
-    int G = 0;
-    int j = 0;
-    int k = 0;
+    private DIRECTION midDirection;
+    int G = 0; int j = 0; int k = 0;
+    
+    private transient Stack<Grid> _unexploredGrids = null;
 
     public Robot(int currentRow, int currentCol, DIRECTION direction) {
         this.currentRow = currentRow;
@@ -216,7 +216,7 @@ public class Robot {
             DIRECTION sensorDir = s.getSensorDirection();
             int sensorMinRange = s.getMinRange();
             int sensorMaxRange = s.getMaxRange();
-            int u = 0;
+//            int u = 0;
 //            System.out.println(u++ + ".");
 //            System.out.println("sensorPosRow: " + sensorPosRow + "sensorPosCol: " + sensorPosCol);
 //            System.out.println("sensorDir: " + sensorDir);
@@ -305,7 +305,6 @@ public class Robot {
                 String temp;                                                                                        //Temporary storage for 1 Hex to 4 Bit conversion                                                                                    
                 String bitString = "";
                 ArrayList<Integer> shortestPath;
-
                 for (int i = 0; i < 76; i++) {
                     temp = String.format("%04d", Integer.parseInt(hexToBin(map.substring(i, i + 1))));                //Hexadecimal to Binary conversion
                     bitString += temp;
@@ -318,6 +317,7 @@ public class Robot {
                 }
 
                 shortestPath = aStarSearch(currentGrid, startingGrid, mapBit, direction);
+                shortestPath.add(currentGrid);
                 Collections.reverse(shortestPath);
                 System.out.println("Shortest Path" + shortestPath);
                 simulateShortestPath(shortestPath);
@@ -352,6 +352,7 @@ public class Robot {
                 }
 
                 shortestPath = aStarSearch(currentGrid, startingGrid, mapBit, direction);
+                shortestPath.add(currentGrid);
                 Collections.reverse(shortestPath);
                 System.out.println("Shortest Path" + shortestPath);
                 simulateShortestPath(shortestPath);
@@ -365,16 +366,6 @@ public class Robot {
             System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
             System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
             System.out.println("MDF String:" + _mapUI.generateMapString());
-//            _unexploredGrids = getUnexploredGrids();
-//            if (!_unexploredGrids.isEmpty()) {
-//
-//                // Start shortest path to the first unexplored grid
-//                Grid[][] robotMap = _robotMap.getMapGrids();
-//                Grid currentGrid = robotMap[_robotMapPosRow][_robotMapPosCol];
-//
-//                startExploringUnexplored(currentGrid, _robotDirection, _unexploredGrids.pop(), robotMap);
-//            }
-
             return;
         }
 
@@ -387,30 +378,62 @@ public class Robot {
         if (withinGoalZone(currentRow, currentCol)) {
             _bReachedGoal = true;
         }
+        
+        Grid[][] map = _robotMap.getMapGrids();
+        int checkExploredGrids = 0;
 
-        boolean frontWall = isFrontWall();
-        boolean leftWall = isLeftWall();
-        boolean rightWall = isRightWall();
-
-        // (No leftWall AND previousLeftWall) OR (frontWall AND No leftWall AND rightWall)
-        if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
-            rotateLeft();
-        } // (frontWall AND No rightWall)
-        else if (frontWall && !rightWall) {
-            rotateRight();
-        } // (frontWall AND leftWall AND rightWall)
-        else if (frontWall && leftWall && rightWall) {
-            rotate180();
-        } else {
-            moveForward();
-            newCol = currentCol;
-            newRow = currentRow;
-            updatePosition(oldRow, oldCol, newRow, newCol);
+        for (int i = 1; i < Constants.MAP_ROWS; i++) {
+            for (int j = 1; j < Constants.MAP_COLS; j++) {
+                if (map[i][j].isExplored()) {
+                    checkExploredGrids++;
+                }
+            }
         }
 
-        // Save current leftWall state into _bPreviousLeftWall
-        _bPreviousLeftWall = leftWall;
+        if(checkExploredGrids >= 300){
+            _unexploredGrids = getUnexploredGrids();
+            if (!_unexploredGrids.isEmpty()) {
 
+                // Start shortest path to the first unexplored grid
+                Grid[][] robotMap = _robotMap.getMapGrids();
+                Grid currentGrid = robotMap[currentRow][currentCol];
+
+                startExploringUnexplored(currentGrid, direction, _unexploredGrids.pop(), robotMap);
+            }
+        } else {
+            boolean frontWall = isFrontWall();
+            boolean leftWall = isLeftWall();
+            boolean rightWall = isRightWall();
+
+            // (No leftWall AND previousLeftWall) OR (frontWall AND No leftWall AND rightWall)
+            if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
+                rotateLeft();
+            } // (frontWall AND No rightWall)
+            else if (frontWall && !rightWall) {
+                rotateRight();
+            } // (frontWall AND leftWall AND rightWall)
+            else if (frontWall && leftWall && rightWall) {
+                rotate180();
+            } else {
+                moveForward();
+                newCol = currentCol;
+                newRow = currentRow;
+                updatePosition(oldRow, oldCol, newRow, newCol);
+            }
+
+            // Save current leftWall state into _bPreviousLeftWall
+            _bPreviousLeftWall = leftWall;
+        }
+    }
+
+    /**
+     * For exploring any unexplored area
+     */
+    public void startExploringUnexplored(Grid current, DIRECTION curDir,
+            Grid target, Grid[][] robotMap) {
+        while(current!=target || !target.isExplored()){
+            //move closer to target grid
+        }
     }
 
     private void updatePosition(int oldRow, int oldCol, int newRow, int newCol) {
@@ -503,6 +526,25 @@ public class Robot {
         direction = bClockwise ? DIRECTION.getNext(direction)
                 : DIRECTION.getPrevious(direction);
     }
+    
+    private Stack<Grid> getUnexploredGrids() {
+		Stack<Grid> unexploredGrids = new Stack<Grid>();
+
+		Grid[][] map = _robotMap.getMapGrids();
+		for (int i = 1; i < Constants.MAP_ROWS - 1; i++) {
+			for (int j = 1; j < Constants.MAP_COLS - 1; j++) {
+				if (!map[i][j].isExplored()) {
+					unexploredGrids.push(map[i][j]);
+				}
+			}
+		}
+
+//		if (!unexploredGrids.isEmpty()) {
+//			Collections.reverse(unexploredGrids);
+//		}
+
+		return unexploredGrids;
+	}
 
     private boolean withinStartZone(int robotMapPosRow, int robotMapPosCol) {
 
@@ -1080,7 +1122,9 @@ public class Robot {
             currentIndex = cameFrom[currentIndex];
 
         }
-        path.add(start);
+        if (start == ((RobotConstant.DEFAULT_START_ROW * 15) + RobotConstant.DEFAULT_START_COL)) {
+            path.add(start);
+        }
         return path;
     }
 
@@ -1175,6 +1219,7 @@ public class Robot {
             openSet.remove(lowestIndex);
             System.out.println(Catch);
             if (currentIndex == goal) {
+                midDirection = starDirection;
                 return shortestPathResult(cameFrom, currentIndex, start);
             }
             closedSet[currentIndex] = true;
@@ -1216,7 +1261,7 @@ public class Robot {
         int mapBit[] = new int[300];                                                                        //Map in Binary     
         int start = 0;                                                                                     //Start Point
         int end = 267;                                                                                      //Goal Point
-        int mid = 6;                                                                                      //Mid Point
+        int mid = _mapUI.getMidIndex();                                                                                      //Mid Point
         DIRECTION aDirection = direction;
         String temp;                                                                                        //Temporary storage for 1 Hex to 4 Bit conversion                                                                                    
         String bitString = "";                                                                              //Initialization of map in binary
@@ -1235,12 +1280,17 @@ public class Robot {
             mapBit[h] = Integer.parseInt(bitString.substring(h, h + 1));                                      //String to Int Conversion
         }
 //
-        shortestPath1 = aStarSearch(start, end, mapBit, aDirection);
-//        shortestPath2 = aStarSearch(mid, end, mapBit, aDirection);
+        if(_mapUI.getMidIndex()==0 || _mapUI.getMidIndex()==267){
+            shortestPath = aStarSearch(start, end, mapBit, aDirection);
+            Collections.reverse(shortestPath);
+        } else {
+            shortestPath1 = aStarSearch(start, mid, mapBit, aDirection);
+            shortestPath2 = aStarSearch(mid, end, mapBit, midDirection);
 
-//        shortestPath.addAll(shortestPath2);                                                                 //concatenate of 2 Arraylist
-//        shortestPath.addAll(shortestPath1);
-        Collections.reverse(shortestPath1);
+            shortestPath.addAll(shortestPath2);                                                                 //concatenate of 2 Arraylist
+            shortestPath.addAll(shortestPath1);
+            Collections.reverse(shortestPath);
+        }
         System.out.println("");
 
         for (int i = 0; i < 300; i++) {
@@ -1259,8 +1309,8 @@ public class Robot {
             //                System.out.print(" W ");
             else if (i == end) {
                 System.out.print(" E ");
-            } else if (PrintShortestPath(i, shortestPath1)) {
-                switch (directionPrinting(i, shortestPath1)) {
+            } else if (PrintShortestPath(i, shortestPath)) {
+                switch (directionPrinting(i, shortestPath)) {
                     case NORTH:
                         System.out.print(" V ");
                         break;
@@ -1285,9 +1335,9 @@ public class Robot {
                 System.out.println("");
             }
         }
-//        for(int i = 0; i< shortestPath1.size(); i++)                                                        //Printing of shortest path result
-//            System.out.print(shortestPath1.get(i) + " -> ");//@@@@@@@@@@@@@@@@@@@@@@@@ 
-        simulateShortestPath(shortestPath1);
+        for(int i = 0; i< shortestPath.size(); i++)                                                        //Printing of shortest path result
+            System.out.print(shortestPath.get(i) + " -> ");//@@@@@@@@@@@@@@@@@@@@@@@@ 
+        simulateShortestPath(shortestPath);
     }
 
     public void simulateShortestPath(ArrayList<Integer> shortestPath) {
@@ -1311,7 +1361,6 @@ public class Robot {
                     if (withinGoalZone(currentRow, currentCol)) {
                         _bReachedGoal = true;
                     }
-
                     int gridIndex, nextIndex, gridCol, gridRow, nextCol, nextRow, newCol, newRow, oldCol, oldRow;
                     DIRECTION nextDir;
 

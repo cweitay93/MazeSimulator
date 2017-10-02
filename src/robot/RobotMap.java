@@ -99,6 +99,8 @@ public class RobotMap extends Map {
                         gridColor = Constants.C_START;
                     } else if (isGoalZone(mapRow, mapCol)) {
                         gridColor = Constants.C_GOAL;
+                    } else if (isMidZone(mapRow,mapCol,MapUI.midRow,MapUI.midCol)){
+                        gridColor = Constants.C_MID;
                     } else if (_grids[mapRow][mapCol].isObstacle()) {
                         gridColor = Constants.C_OBSTACLE;
                     } else {

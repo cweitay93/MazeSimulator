@@ -61,6 +61,10 @@ public class Map extends JPanel {
 				&& (col <= (Constants.MAP_COLS - 1))
 				&& (col >= (Constants.MAP_COLS - 3)));
 	}
+        
+        public boolean isMidZone(int row, int col, int midRow, int midCol) {
+            return (row >= midRow && row <= midRow + 2 && col >= midCol && col <= midCol + 2);
+        }
 	
 	public Grid [][] getMapGrids() {
 		return _grids;
