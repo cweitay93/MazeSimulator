@@ -109,6 +109,7 @@ public class MapUI extends Map {
     public void toggleMidPoint(){
         if(!_bSetMid){
             _bSetMid = true;
+            System.out.println("Click on a map grid to set mid point.");
         } else {
             _bSetMid = false;
         }
