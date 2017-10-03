@@ -64,8 +64,10 @@ public class Robot {
     private transient int _elapsedExplorationTime = 0;
     private transient int _elapsedShortestPathTime = 0;
     private DIRECTION midDirection;
-    int G = 0; int j = 0; int k = 0;
-    
+    int G = 0;
+    int j = 0;
+    int k = 0;
+
     private transient Stack<Grid> _unexploredGrids = null;
 
     public Robot(int currentRow, int currentCol, DIRECTION direction) {
@@ -378,7 +380,7 @@ public class Robot {
         if (withinGoalZone(currentRow, currentCol)) {
             _bReachedGoal = true;
         }
-        
+
         Grid[][] map = _robotMap.getMapGrids();
         int checkExploredGrids = 0;
 
@@ -390,7 +392,7 @@ public class Robot {
             }
         }
 
-        if(checkExploredGrids >= 300){
+        if (checkExploredGrids >= 300) {
             _unexploredGrids = getUnexploredGrids();
             if (!_unexploredGrids.isEmpty()) {
 
@@ -431,7 +433,7 @@ public class Robot {
      */
     public void startExploringUnexplored(Grid current, DIRECTION curDir,
             Grid target, Grid[][] robotMap) {
-        while(current!=target || !target.isExplored()){
+        while (current != target || !target.isExplored()) {
             //move closer to target grid
         }
     }
@@ -526,25 +528,24 @@ public class Robot {
         direction = bClockwise ? DIRECTION.getNext(direction)
                 : DIRECTION.getPrevious(direction);
     }
-    
-    private Stack<Grid> getUnexploredGrids() {
-		Stack<Grid> unexploredGrids = new Stack<Grid>();
 
-		Grid[][] map = _robotMap.getMapGrids();
-		for (int i = 1; i < Constants.MAP_ROWS - 1; i++) {
-			for (int j = 1; j < Constants.MAP_COLS - 1; j++) {
-				if (!map[i][j].isExplored()) {
-					unexploredGrids.push(map[i][j]);
-				}
-			}
-		}
+    private Stack<Grid> getUnexploredGrids() {
+        Stack<Grid> unexploredGrids = new Stack<Grid>();
+
+        Grid[][] map = _robotMap.getMapGrids();
+        for (int i = 1; i < Constants.MAP_ROWS - 1; i++) {
+            for (int j = 1; j < Constants.MAP_COLS - 1; j++) {
+                if (!map[i][j].isExplored()) {
+                    unexploredGrids.push(map[i][j]);
+                }
+            }
+        }
 
 //		if (!unexploredGrids.isEmpty()) {
 //			Collections.reverse(unexploredGrids);
 //		}
-
-		return unexploredGrids;
-	}
+        return unexploredGrids;
+    }
 
     private boolean withinStartZone(int robotMapPosRow, int robotMapPosCol) {
 
@@ -1181,6 +1182,91 @@ public class Robot {
         return null;
     }
 
+//    public ArrayList<String> sendSerialMovement(ArrayList<Integer> shortestPathResult) {
+//        System.out.println("Size: " + shortestPathResult.size());
+//        System.out.println("Checking Array: " + shortestPathResult);
+//        ArrayList<String> movementArrayList = new ArrayList<String>();
+//        String previous = "";
+//        movementArrayList.add("W");
+////         movementArrayList.add(shortestPathResult.get(0));
+//        for (int i = 0; i < shortestPathResult.size() - 1; i++) {
+//            if (shortestPathResult.get(i) - shortestPathResult.get(i + 1) == -1 && previous != "East") {
+//                previous = "East";
+//                movementArrayList.add("W");
+//            } else if (shortestPathResult.get(i) - shortestPathResult.get(i + 1) == 1 && previous != "West") {
+//                previous = "West";
+//                movementArrayList.add("W");
+//            } else if (shortestPathResult.get(i) - shortestPathResult.get(i + 1) == -15 && previous != "South") {
+//                previous = "South";
+//                movementArrayList.add("W");
+//            } else if (shortestPathResult.get(i) - shortestPathResult.get(i + 1) == 15 && previous != "North") {
+//                previous = "North";
+//                movementArrayList.add("W");
+//            }
+//        }
+//        return movementArrayList;
+//    }
+    public ArrayList<String> sendSerialMovementSteps(ArrayList<Integer> shortestPathResult) {
+        int previous = shortestPathResult.get(0);
+        int previousDiff = shortestPathResult.get(0) - shortestPathResult.get(1);
+        ArrayList<String> stepsArrayList = new ArrayList<String>();
+        int counter = 0;
+
+        for (int i = 1; i < shortestPathResult.size(); i++) {
+            int diff = previous - shortestPathResult.get(i);
+            previous = shortestPathResult.get(i);
+            if (diff == previousDiff) {
+                previousDiff = diff;
+                counter++;
+            } else {
+                stepsArrayList.add(Integer.toString(counter));
+                stepsArrayList.add("1");
+                counter = 1;
+                previousDiff = diff;
+            }
+        }
+        stepsArrayList.add(Integer.toString(counter));
+        return stepsArrayList;
+    }
+
+    public ArrayList<String> sendSerialMovement(ArrayList<Integer> shortestPathResult) {
+        int previous = shortestPathResult.get(0);
+        int previousDiff = shortestPathResult.get(0) - shortestPathResult.get(1);
+        ArrayList<String> movementArrayList = new ArrayList<String>();
+        
+        movementArrayList.add("W");
+        for (int i = 1; i < shortestPathResult.size(); i++) {
+            int diff = previous - shortestPathResult.get(i);
+            previous = shortestPathResult.get(i);
+            if (diff == previousDiff) {
+                previousDiff = diff;
+            } else {
+                if (previousDiff == -1 && diff == 15) {
+                    movementArrayList.add("A");
+                } else if (previousDiff == -1 && diff == -15) {
+                    movementArrayList.add("D");
+                } else if (previousDiff == 1 && diff == 15) {
+                    movementArrayList.add("D");
+                } else if (previousDiff == 1 && diff == -15) {
+                    movementArrayList.add("A");
+                } else if (previousDiff == 15 && diff == 1) {
+                    movementArrayList.add("A");
+                } else if (previousDiff == 15 && diff == -1) {
+                    movementArrayList.add("D");
+                } else if (previousDiff == -15 && diff == 1) {
+                    movementArrayList.add("D");
+                } else if (previousDiff == -15 && diff == -1) {
+                    movementArrayList.add("A");
+                } else {
+                    movementArrayList.add("S");
+                }
+                movementArrayList.add("W");
+                previousDiff = diff;
+            }
+        }
+        return movementArrayList;
+    }
+
     public ArrayList<Integer> aStarSearch(int start, int goal, int[] mapBit, DIRECTION direction) {                        //Function of A* search algorithm
         boolean closedSet[] = new boolean[300];                                                             //The set of nodes already evaluated
         ArrayList<Integer> openSet = new ArrayList();                                                       //The set of currently discovered nodes that are not evaluated yet
@@ -1194,7 +1280,7 @@ public class Robot {
         int currentIndex = start;
         DIRECTION starDirection = direction;
         ArrayList Catch = new ArrayList<Integer>();
-        int decisionStartFlag = 0;
+//        int decisionStartFlag = 0;
 
         Arrays.fill(closedSet, false);
         Arrays.fill(cameFrom, -1);
@@ -1236,15 +1322,15 @@ public class Robot {
                 if (gScoreTemp >= gScore[neighbour.get(i)]) {
                     continue;
                 } else if (starDirection == directionIndicator(currentIndex, neighbour.get(i), starDirection)) {
-                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
-                    System.out.println("true, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
+//                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
+//                    System.out.println("true, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
                     cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
                     cameFrom[neighbour.get(i)] = currentIndex;
                     gScore[neighbour.get(i)] = gScoreTemp;
                     fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal);
                 } else {
-                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
-                    System.out.println("false, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
+//                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
+//                    System.out.println("false, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
                     cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
                     cameFrom[neighbour.get(i)] = currentIndex;
                     gScore[neighbour.get(i)] = gScoreTemp;
@@ -1280,7 +1366,7 @@ public class Robot {
             mapBit[h] = Integer.parseInt(bitString.substring(h, h + 1));                                      //String to Int Conversion
         }
 //
-        if(_mapUI.getMidIndex()==0 || _mapUI.getMidIndex()==267){
+        if (_mapUI.getMidIndex() == 0 || _mapUI.getMidIndex() == 267) {
             shortestPath = aStarSearch(start, end, mapBit, aDirection);
             Collections.reverse(shortestPath);
         } else {
@@ -1312,16 +1398,16 @@ public class Robot {
             } else if (PrintShortestPath(i, shortestPath)) {
                 switch (directionPrinting(i, shortestPath)) {
                     case NORTH:
-                        System.out.print(" V ");
+                        System.out.print(" ^ ");
                         break;
                     case EAST:
-                        System.out.print(" < ");
-                        break;
-                    case WEST:
                         System.out.print(" > ");
                         break;
+                    case WEST:
+                        System.out.print(" < ");
+                        break;
                     case SOUTH:
-                        System.out.print(" ^ ");
+                        System.out.print(" V ");
                         break;
                     default:
                         System.out.println("Error");
@@ -1335,8 +1421,13 @@ public class Robot {
                 System.out.println("");
             }
         }
-        for(int i = 0; i< shortestPath.size(); i++)                                                        //Printing of shortest path result
+        for (int i = 0; i < shortestPath.size(); i++) //Printing of shortest path result
+        {
             System.out.print(shortestPath.get(i) + " -> ");//@@@@@@@@@@@@@@@@@@@@@@@@ 
+        }
+        System.out.println("");
+        System.out.println("Movements: " + sendSerialMovement(shortestPath));
+        System.out.println("Steps: " + sendSerialMovementSteps(shortestPath));
         simulateShortestPath(shortestPath);
     }
 
@@ -1393,7 +1484,7 @@ public class Robot {
                             } else if (checkTurnRight(direction, nextDir)) {
                                 rotateRight();
                                 moveForward();
-                            } else if (checkTurn180(direction,nextDir)){
+                            } else if (checkTurn180(direction, nextDir)) {
                                 rotateRight();
                                 rotateRight();
                                 moveForward();
@@ -1474,7 +1565,7 @@ public class Robot {
         }
         return false;
     }
-    
+
     public boolean checkTurn180(DIRECTION curDir, DIRECTION nextDir) {
         switch (curDir) {
             case NORTH:
