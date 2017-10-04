@@ -3,12 +3,14 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Eugene%20Tan/Desktop/GitRepository/MazeSimulator/src/map/Map.java</file>
-            <file>file:/C:/Users/Eugene%20Tan/Desktop/GitRepository/MazeSimulator/src/robot/RobotConstant.java</file>
-            <file>file:/C:/Users/Eugene%20Tan/Desktop/GitRepository/MazeSimulator/src/map/MapUI.java</file>
-            <file>file:/C:/Users/Eugene%20Tan/Desktop/GitRepository/MazeSimulator/src/mazesimulator/MazeSimulator.java</file>
-            <file>file:/C:/Users/Eugene%20Tan/Desktop/GitRepository/MazeSimulator/src/robot/Robot.java</file>
-            <file>file:/C:/Users/Eugene%20Tan/Desktop/GitRepository/MazeSimulator/src/robot/RobotMap.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/robot/RobotMap.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/robot/Sensor.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/robot/Robot.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/robot/RobotConstant.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/map/Constants.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/mazesimulator/MazeSimulator.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/map/Map.java</file>
+            <file>file:/C:/Users/Chengwei/Desktop/MazeSimulator/src/map/MapUI.java</file>
         </group>
     </open-files>
 </project-private>

@@ -63,12 +63,21 @@ public class Robot {
     // Elapsed time for the exploration phase (in milliseconds)
     private transient int _elapsedExplorationTime = 0;
     private transient int _elapsedShortestPathTime = 0;
+    
+    //Exploring Unexplored
+    private transient boolean _bExploreUnexplored = false;
+    private transient boolean _bExploring = false;
+    ArrayList<Integer> exploreUnexploredPath;
+    int targetGrid = 0;
+    private transient boolean movingToStart = false;
+    
     private DIRECTION midDirection;
     int G = 0;
     int j = 0;
     int k = 0;
 
-    private transient Stack<Grid> _unexploredGrids = null;
+    private ArrayList<Integer> _unexploredGrids = null;
+    private ArrayList<Integer> _unreachableGrids = new ArrayList<Integer>();
 
     public Robot(int currentRow, int currentCol, DIRECTION direction) {
         this.currentRow = currentRow;
@@ -229,9 +238,6 @@ public class Robot {
 			 * freeGrids);
              */
             Grid[][] robotMapGrids = _robotMap.getMapGrids();
-//            if (sensorMinRange > 1 && freeGrids > 0) {
-//                sensorMinRange = 1;
-//            }
             if (sensorMinRange >= 1 && freeGrids > 0) {
                 sensorMinRange = 1;
                 for (int currGrid = sensorMinRange; currGrid <= sensorMaxRange; currGrid++) {
@@ -361,13 +367,73 @@ public class Robot {
                 return;
             }
         }
+        
+        if(_bExploreUnexplored) {
+            int currentGrid = ConvertToIndex(currentRow,currentCol);
+            //System.out.println("unreachable: " + _unreachableGrids);
+            _unexploredGrids = getUnexploredGrids();
+//            System.out.println("unexplored: " + _unexploredGrids);
+            if(_unexploredGrids.isEmpty() && currentGrid != 0){
+                moveToStart();
+                //_bExploreUnexplored = false;
+                return;
+            } else if(_unexploredGrids.isEmpty() && currentGrid == 0){
+                _bExploreUnexplored = false;
+                return;
+            }
+            
+            if(!_bExploring){
+                double targetDist = 0;
+                double tempDist = 0;
+                int reachableGrid = 0;
+
+                for (int i = 0; i < _unexploredGrids.size(); i++) {
+                    tempDist = heuristicDist(0, _unexploredGrids.get(i));
+                    if (tempDist > targetDist) {
+                        targetGrid = _unexploredGrids.get(i);
+                        targetDist = tempDist;
+                    } 
+                }
+                reachableGrid = findReachableGrid(targetGrid);
+                //System.out.println("target grid: "+targetGrid);
+                //System.out.println("reachable grid: "+reachableGrid);
+                if(reachableGrid != 0){
+                    exploreUnexploredPath = generatePath(currentGrid, reachableGrid); //generate Path
+                    if(exploreUnexploredPath==null){
+                        blockAddUnreachable(targetGrid,reachableGrid);
+                        System.out.println("why"+_unreachableGrids);
+                        //_unreachableGrids.add(targetGrid);
+                    } else {
+                        if(currentGrid != 0)
+                            exploreUnexploredPath.add(currentGrid);
+                        Collections.reverse(exploreUnexploredPath);
+                        if(exploreUnexploredPath.size()>=1){
+                            _bExploring = true;
+                        }
+                    }
+                } else {
+                    if(!_unreachableGrids.contains(targetGrid)){
+                        _unreachableGrids.add(targetGrid);
+                    }
+                }
+            } else {
+                exploreUnexplored();
+            }
+            return;
+        }
 
         if (_bReachedGoal && withinStartZone(currentRow, currentCol)) {
-
-            _bExplorationComplete = true;
-            System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
-            System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
-            System.out.println("MDF String:" + _mapUI.generateMapString());
+            _unexploredGrids = getUnexploredGrids();
+            if(!_unexploredGrids.isEmpty()){
+                _bExploreUnexplored = true;
+                while(direction != RobotConstant.DEFAULT_START_DIR)
+                    rotateRight();
+            } else {
+                _bExplorationComplete = true;
+                System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
+                System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
+                System.out.println("MDF String:" + _mapUI.generateMapString());
+            }
             return;
         }
 
@@ -380,62 +446,323 @@ public class Robot {
         if (withinGoalZone(currentRow, currentCol)) {
             _bReachedGoal = true;
         }
+        
+        boolean frontWall = isFrontWall();
+        boolean leftWall = isLeftWall();
+        boolean rightWall = isRightWall();
 
-        Grid[][] map = _robotMap.getMapGrids();
-        int checkExploredGrids = 0;
+        // (No leftWall AND previousLeftWall) OR (frontWall AND No leftWall AND rightWall)
+        if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
+            rotateLeft();
+        } // (frontWall AND No rightWall)
+        else if (frontWall && !rightWall) {
+            rotateRight();
+        } // (frontWall AND leftWall AND rightWall)
+        else if (frontWall && leftWall && rightWall) {
+            rotate180();
+        } else {
+            moveForward();
+            newCol = currentCol;
+            newRow = currentRow;
+            updatePosition(oldRow, oldCol, newRow, newCol);
+        }
 
-        for (int i = 1; i < Constants.MAP_ROWS; i++) {
-            for (int j = 1; j < Constants.MAP_COLS; j++) {
-                if (map[i][j].isExplored()) {
-                    checkExploredGrids++;
+        // Save current leftWall state into _bPreviousLeftWall
+        _bPreviousLeftWall = leftWall;
+    }
+    
+    public void blockAddUnreachable(int target, int limit){
+        int addIndex, targetRow, targetCol, limitRow, limitCol, rowDistance, colDistance, row, col;
+        targetRow = ConvertRow(target);
+        targetCol = ConvertCol(target);
+        limitRow = ConvertRow(limit);
+        limitCol = ConvertCol(limit);
+       
+        
+        rowDistance = limitRow - targetRow; // 2
+        colDistance = limitCol - targetCol;//-1
+        //System.out.println("target: " +target+" limit: "+ limit);
+        if(rowDistance <0){
+            if(colDistance<0){
+                for(row = limitRow; row <= targetRow; row++){
+                    for(col = limitCol; col <= targetCol; col++){
+                        addIndex = ConvertToIndex(row, col);
+                        if(!_unreachableGrids.contains(addIndex))
+                            _unreachableGrids.add(addIndex);
+                    }
+                }
+            } else {
+                for(row = limitRow; row <= targetRow; row++){
+                    for(col = targetCol; col <= limitCol; col++){
+                        addIndex = ConvertToIndex(row, col);
+                        if(!_unreachableGrids.contains(addIndex))
+                            _unreachableGrids.add(addIndex);
+                    }
+                }
+            }
+        } else {
+            if(colDistance<0){
+                for(row = targetRow; row <= limitRow; row++){
+                    for(col = limitCol; col <= targetCol; col++){
+                        addIndex = ConvertToIndex(row, col);
+                        if(!_unreachableGrids.contains(addIndex))
+                            _unreachableGrids.add(addIndex);
+                    }
+                }
+            } else {
+                for(row = targetRow; row <= limitRow; row++){
+                    for(col = targetCol; col <= limitCol; col++){
+                        addIndex = ConvertToIndex(row, col);
+                        if(!_unreachableGrids.contains(addIndex))
+                            _unreachableGrids.add(addIndex);
+                    }
                 }
             }
         }
+        
+//        for(int row = limitRow; row < limitRow + rowDistance; row++){
+//            for(int col = limitCol; col < limitCol +colDistance; col++)
+//                _unreachableGrids.add(ConvertToIndex(row, col));
+//        }
+        
+    }
+    
+    public ArrayList<Integer> generatePath(int current, int reachable){
+        String mapString = "";
+        int mapBit[] = new int[300];
+        Grid[][] _grids = _robotMap.getMapGrids();
 
-        if (checkExploredGrids >= 300) {
-            _unexploredGrids = getUnexploredGrids();
-            if (!_unexploredGrids.isEmpty()) {
-
-                // Start shortest path to the first unexplored grid
-                Grid[][] robotMap = _robotMap.getMapGrids();
-                Grid currentGrid = robotMap[currentRow][currentCol];
-
-                startExploringUnexplored(currentGrid, direction, _unexploredGrids.pop(), robotMap);
+        for (int row = 0; row < Constants.MAP_ROWS; row++) {
+            for (int col = 0; col < Constants.MAP_COLS; col++) {
+                if (_grids[row][col].isExplored()) {
+                    mapString += _grids[row][col].isObstacle() ? "1" : "0";                                 //Generate Map String
+                } else {
+                    mapString += 0;
+                }
             }
+        }
+        for (int h = 0; h < 300; h++) {
+            mapBit[h] = Integer.parseInt(mapString.substring(h, h + 1));                                      //String to Int Conversion
+        }
+
+        return aStarSearch(current, reachable, mapBit, direction);
+    }
+    
+    public void moveToStart() {
+        if(!movingToStart){
+        int currentGrid = ConvertToIndex(currentRow, currentCol);
+        String mapString = "";
+        int mapBit[] = new int[300];
+        Grid[][] _grids = _robotMap.getMapGrids();
+
+        for (int row = 0; row < Constants.MAP_ROWS; row++) {
+            for (int col = 0; col < Constants.MAP_COLS; col++) {
+                if (_grids[row][col].isExplored()) {
+                    mapString += _grids[row][col].isObstacle() ? "1" : "0";                                 //Generate Map String
+                } else {
+                    mapString += 0;
+                }
+            }
+        }
+        for (int h = 0; h < 300; h++) {
+            mapBit[h] = Integer.parseInt(mapString.substring(h, h + 1));                                      //String to Int Conversion
+        }
+
+            exploreUnexploredPath = aStarSearch(currentGrid, 0, mapBit, direction); //generate Path
+            if(currentGrid != 0)
+                exploreUnexploredPath.add(currentGrid);
+            Collections.reverse(exploreUnexploredPath);
+            movingToStart = true;
         } else {
-            boolean frontWall = isFrontWall();
-            boolean leftWall = isLeftWall();
-            boolean rightWall = isRightWall();
+            int gridRow, gridCol, nextRow, nextCol, newRow, newCol;
+            DIRECTION nextDir;
+            int oldCol = currentCol;
+            int oldRow = currentRow;
+            if (!exploreUnexploredPath.isEmpty()) {
+                //System.out.println("before: "+exploreUnexploredPath.get(0));
+                gridCol = ConvertCol(exploreUnexploredPath.get(0));
+                gridRow = ConvertRow(exploreUnexploredPath.get(0));
+                if (exploreUnexploredPath.size() > 1) {
+                    nextCol = ConvertCol(exploreUnexploredPath.get(1));
+                    nextRow = ConvertRow(exploreUnexploredPath.get(1));
 
-            // (No leftWall AND previousLeftWall) OR (frontWall AND No leftWall AND rightWall)
-            if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
-                rotateLeft();
-            } // (frontWall AND No rightWall)
-            else if (frontWall && !rightWall) {
-                rotateRight();
-            } // (frontWall AND leftWall AND rightWall)
-            else if (frontWall && leftWall && rightWall) {
-                rotate180();
-            } else {
-                moveForward();
-                newCol = currentCol;
-                newRow = currentRow;
-                updatePosition(oldRow, oldCol, newRow, newCol);
+                    if (checkForObstacles(nextRow, nextCol)) {
+                        exploreUnexploredPath.clear();
+                        return;
+                    }
+
+                    if ((nextRow == (gridRow + 1) && nextCol == gridCol)) {
+                        nextDir = DIRECTION.SOUTH;
+                    } else if ((nextRow == (gridRow - 1) && nextCol == gridCol)) {
+                        nextDir = DIRECTION.NORTH;
+                    } else if ((nextCol == (gridCol + 1) && nextRow == gridRow)) {
+                        nextDir = DIRECTION.EAST;
+                    } else {
+                        nextDir = DIRECTION.WEST;
+                    }
+
+                    if (checkTurnLeft(direction, nextDir)) {
+                        rotateLeft();
+                        moveForward();
+                    } else if (checkTurnRight(direction, nextDir)) {
+                        rotateRight();
+                        moveForward();
+                    } else if (checkTurn180(direction, nextDir)) {
+                        rotateRight();
+                        rotateRight();
+                        moveForward();
+                    } else {
+                        moveForward();
+                    }
+                    newCol = currentCol;
+                    newRow = currentRow;
+                    updatePosition(oldRow, oldCol, newRow, newCol);
+                    exploreUnexploredPath.remove(0);
+                    //System.out.println("after: "+exploreUnexploredPath.get(0));
+                }
             }
-
-            // Save current leftWall state into _bPreviousLeftWall
-            _bPreviousLeftWall = leftWall;
         }
     }
 
-    /**
-     * For exploring any unexplored area
-     */
-    public void startExploringUnexplored(Grid current, DIRECTION curDir,
-            Grid target, Grid[][] robotMap) {
-        while (current != target || !target.isExplored()) {
-            //move closer to target grid
+    public void exploreUnexplored() {
+        int gridRow, gridCol, nextRow, nextCol, newRow, newCol;
+        DIRECTION nextDir;
+        int oldCol = currentCol;
+        int oldRow = currentRow;
+        // Make the next move
+        if (!exploreUnexploredPath.isEmpty()) {
+            //System.out.println("before: "+exploreUnexploredPath.get(0));
+            gridCol = ConvertCol(exploreUnexploredPath.get(0));
+            gridRow = ConvertRow(exploreUnexploredPath.get(0));
+            if (exploreUnexploredPath.size()>1) {
+                nextCol = ConvertCol(exploreUnexploredPath.get(1));
+                nextRow = ConvertRow(exploreUnexploredPath.get(1));
+                
+                if(checkForObstacles(nextRow,nextCol)){
+                    exploreUnexploredPath.clear();
+                    return;
+                }
+                
+                if ((nextRow == (gridRow + 1) && nextCol == gridCol)) {
+                    nextDir = DIRECTION.SOUTH;
+                } else if ((nextRow == (gridRow - 1) && nextCol == gridCol)) {
+                    nextDir = DIRECTION.NORTH;
+                } else if ((nextCol == (gridCol + 1) && nextRow == gridRow)) {
+                    nextDir = DIRECTION.EAST;
+                } else {
+                    nextDir = DIRECTION.WEST;
+                }
+
+                if (checkTurnLeft(direction, nextDir)) {
+                    rotateLeft();
+                    moveForward();
+                } else if (checkTurnRight(direction, nextDir)) {
+                    rotateRight();
+                    moveForward();
+                } else if (checkTurn180(direction, nextDir)) {
+                    rotateRight();
+                    rotateRight();
+                    moveForward();
+                } else {
+                    moveForward();
+                }
+                newCol = currentCol;
+                newRow = currentRow;
+                updatePosition(oldRow, oldCol, newRow, newCol);
+                exploreUnexploredPath.remove(0);
+                //System.out.println("after: "+exploreUnexploredPath.get(0));
+            } else if(exploreUnexploredPath.size()==1){
+                Grid[][] map = _robotMap.getMapGrids();
+                if(!map[ConvertRow(_unexploredGrids.get(0))][ConvertCol(_unexploredGrids.get(0))].isExplored()){
+                    rotateRight();
+                }
+                exploreUnexploredPath.remove(0);
+                _bExploring = false;
+            }
+        } else {
+            _bExploring = false;
         }
+    }
+    
+    public int findReachableGrid(int target) {
+
+        Grid[][] map = _robotMap.getMapGrids();
+        Grid endGrid = null;
+        int endingGridRow = ConvertRow(target);
+        int endingGridCol = ConvertCol(target);
+        
+        // Scenario 6: (Row - RobotConstants.ROBOT_SIZE, Col - 2) reachable
+        if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 2)) {
+            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 2];
+        } 
+        // Scenario 5: (Row - RobotConstants.ROBOT_SIZE, Col - 1) reachable
+        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 1)) {
+            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 1];
+        } 
+        // Scenario 4: (Row - RobotConstants.ROBOT_SIZE, Col) reachable
+        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol)) {
+            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol];
+        } 
+        // Scenario 3: (Row - 2, Col - RobotConstants.ROBOT_SIZE) reachable
+        else if ((endingGridRow - 2 >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow - 2, endingGridCol - RobotConstant.ROBOT_SIZE)) {
+            endGrid = map[endingGridRow - 2][endingGridCol - RobotConstant.ROBOT_SIZE];
+        } 
+        // Scenario 2: (Row - 1, Col - RobotConstants.ROBOT_SIZE) reachable
+        else if ((endingGridRow - 1 >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow - 1, endingGridCol - RobotConstant.ROBOT_SIZE)) {
+            endGrid = map[endingGridRow - 1][endingGridCol - RobotConstant.ROBOT_SIZE];
+        } 
+        // Scenario 1: (Row , Col - RobotConstants.ROBOT_SIZE) reachable
+        else if ((endingGridRow >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow, endingGridCol - RobotConstant.ROBOT_SIZE)) {
+            endGrid = map[endingGridRow][endingGridCol - RobotConstant.ROBOT_SIZE];
+        }
+        // Scenario 9: (Row - 2, Col + 1) reachable
+        else if ((endingGridRow - 2 >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow - 2, endingGridCol + 1)) {
+            endGrid = map[endingGridRow - 2][endingGridCol + 1];
+        } 
+        // Scenario 8: (Row - 1, Col + 1) reachable
+        else if ((endingGridRow - 1 >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow - 1, endingGridCol + 1)) {
+            endGrid = map[endingGridRow - 1][endingGridCol + 1];
+        } 
+        // Scenario 7: (Row , Col + 1) reachable
+        else if ((endingGridRow >= 0 && endingGridCol + 1 <= 14)  && !checkForObstacles(endingGridRow, endingGridCol + 1)) {
+            endGrid = map[endingGridRow][endingGridCol + 1];
+        } 
+        // Scenario 12: (Row + 1, Col - 2) reachable
+        else if ((endingGridRow + 1 <= 19 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 2)) {
+            endGrid = map[endingGridRow + 1][endingGridCol - 2];
+        }
+        // Scenario 11: (Row + 1, Col - 1) reachable
+        else if ((endingGridRow + 1 <= 19 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 1)) {
+            endGrid = map[endingGridRow + 1][endingGridCol - 1];
+        } 
+        // Scenario 10: (Row + 1, Col ) reachable
+        else if ((endingGridRow + 1 <= 19 && endingGridCol >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol)) {
+            endGrid = map[endingGridRow + 1][endingGridCol];
+        } 
+        else {
+            return 0;
+        }
+        
+        return ConvertToIndex(endGrid.getRow(),endGrid.getCol());
+    }
+    
+    private boolean checkForObstacles(int robotPosRow, int robotPosCol) {
+
+        // Check for obstacles within robot's new position
+        Grid[][] robotMapGrids = _robotMap.getMapGrids();
+//        if ((robotPosRow >= 0 && robotPosRow < Constants.MAP_ROWS) && (robotPosCol >= 0 && robotPosCol < Constants.MAP_COLS)) {
+            for (int mapRow = robotPosRow; mapRow < robotPosRow + RobotConstant.ROBOT_SIZE; mapRow++) {
+                for (int mapCol = robotPosCol; mapCol < robotPosCol + RobotConstant.ROBOT_SIZE; mapCol++) {
+                    if((mapRow >= 0 && mapRow < Constants.MAP_ROWS) && (mapCol >= 0 && mapCol < Constants.MAP_COLS)){
+                        if (robotMapGrids[mapRow][mapCol].isExplored() && robotMapGrids[mapRow][mapCol].isObstacle()) {
+                            //System.out.println("obstacle at row: "+mapRow+" col: "+mapCol);
+                            return true;
+                        }
+                    }
+                }
+            }
+//        }
+        return false;
     }
 
     private void updatePosition(int oldRow, int oldCol, int newRow, int newCol) {
@@ -529,21 +856,31 @@ public class Robot {
                 : DIRECTION.getPrevious(direction);
     }
 
-    private Stack<Grid> getUnexploredGrids() {
-        Stack<Grid> unexploredGrids = new Stack<Grid>();
+    private ArrayList<Integer> getUnexploredGrids() {
+        ArrayList<Integer> unexploredGrids = new ArrayList<Integer>();
 
         Grid[][] map = _robotMap.getMapGrids();
-        for (int i = 1; i < Constants.MAP_ROWS - 1; i++) {
-            for (int j = 1; j < Constants.MAP_COLS - 1; j++) {
+        for (int i = 0; i < Constants.MAP_ROWS; i++) {
+            for (int j = 0; j < Constants.MAP_COLS; j++) {
                 if (!map[i][j].isExplored()) {
-                    unexploredGrids.push(map[i][j]);
+                    if(!_unreachableGrids.contains(ConvertToIndex(i,j))){
+                    unexploredGrids.add(ConvertToIndex(i,j));
+                    }
                 }
             }
         }
-
-//		if (!unexploredGrids.isEmpty()) {
-//			Collections.reverse(unexploredGrids);
-//		}
+        
+//        for(int i = 0;i< _unreachableGrids.size();i++){
+//            int item = _unreachableGrids.get(i);
+//            if(unexploredGrids.contains(item)){
+//                for(int k=0;k<unexploredGrids.size();k++){
+//                    if(unexploredGrids.get(k) == item){
+//                        unexploredGrids.remove(k);
+//                    }
+//                }
+//            }
+//        }
+        
         return unexploredGrids;
     }
 
@@ -894,68 +1231,68 @@ public class Robot {
         Sensor _frontRightSensor = null;
         Sensor _frontSensor = null;
         Sensor _leftFrontSensor = null;
-        Sensor _leftMidSensor = null;
+        Sensor _leftBackSensor = null;
         Sensor _rightSensor = null;
 
         switch (robotDirection) {
             case NORTH:
                 _frontLeftSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow, robotStartCol, DIRECTION.NORTH);
                 _frontRightSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow, robotStartCol + 2, DIRECTION.NORTH);
-                _frontSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow, robotStartCol + 1, DIRECTION.NORTH);
-                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 4, robotStartRow, robotStartCol, DIRECTION.WEST);
-                _leftMidSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 1, robotStartCol, DIRECTION.WEST);
-                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 1, robotStartCol + 2, DIRECTION.EAST);
+                _frontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow, robotStartCol + 1, DIRECTION.NORTH);
+                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow, robotStartCol, DIRECTION.WEST);
+                _leftBackSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow + 2, robotStartCol, DIRECTION.WEST);
+                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 2, robotStartCol + 2, DIRECTION.EAST);
 
                 _sensors.add(_frontLeftSensor);
                 _sensors.add(_frontRightSensor);
                 _sensors.add(_frontSensor);
                 _sensors.add(_leftFrontSensor);
-                _sensors.add(_leftMidSensor);
+                _sensors.add(_leftBackSensor);
                 _sensors.add(_rightSensor);
                 break;
             case WEST:
                 _frontLeftSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 2, robotStartCol, DIRECTION.WEST);
                 _frontRightSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow, robotStartCol, DIRECTION.WEST);
-                _frontSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 1, robotStartCol, DIRECTION.WEST);
-                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 4, robotStartRow + 2, robotStartCol, DIRECTION.SOUTH);
-                _leftMidSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 2, robotStartCol + 1, DIRECTION.SOUTH);
-                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow, robotStartCol + 1, DIRECTION.NORTH);
+                _frontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 1, robotStartCol, DIRECTION.WEST);
+                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow + 2, robotStartCol, DIRECTION.SOUTH);
+                _leftBackSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow + 2, robotStartCol + 2, DIRECTION.SOUTH);
+                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow, robotStartCol + 2, DIRECTION.NORTH);
 
                 _sensors.add(_frontLeftSensor);
                 _sensors.add(_frontRightSensor);
                 _sensors.add(_frontSensor);
                 _sensors.add(_leftFrontSensor);
-                _sensors.add(_leftMidSensor);
+                _sensors.add(_leftBackSensor);
                 _sensors.add(_rightSensor);
                 break;
             case EAST:
                 _frontLeftSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow, robotStartCol + 2, DIRECTION.EAST);
                 _frontRightSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 2, robotStartCol + 2, DIRECTION.EAST);
-                _frontSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 1, robotStartCol + 2, DIRECTION.EAST);
-                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 4, robotStartRow, robotStartCol + 2, DIRECTION.NORTH);
-                _leftMidSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow, robotStartCol + 1, DIRECTION.NORTH);
-                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 2, robotStartCol + 1, DIRECTION.SOUTH);
+                _frontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 1, robotStartCol + 2, DIRECTION.EAST);
+                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow, robotStartCol + 2, DIRECTION.NORTH);
+                _leftBackSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow, robotStartCol, DIRECTION.NORTH);
+                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 2, robotStartCol, DIRECTION.SOUTH);
 
                 _sensors.add(_frontLeftSensor);
                 _sensors.add(_frontRightSensor);
                 _sensors.add(_frontSensor);
                 _sensors.add(_leftFrontSensor);
-                _sensors.add(_leftMidSensor);
+                _sensors.add(_leftBackSensor);
                 _sensors.add(_rightSensor);
                 break;
             case SOUTH:
                 _frontLeftSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 2, robotStartCol + 2, DIRECTION.SOUTH);
                 _frontRightSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 2, robotStartCol, DIRECTION.SOUTH);
-                _frontSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 2, robotStartCol + 1, DIRECTION.SOUTH);
-                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 4, robotStartRow + 2, robotStartCol + 2, DIRECTION.EAST);
-                _leftMidSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 1, robotStartCol + 2, DIRECTION.EAST);
-                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow + 1, robotStartCol, DIRECTION.WEST);
+                _frontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, RobotConstant.SHORT_IR_MAX, robotStartRow + 2, robotStartCol + 1, DIRECTION.SOUTH);
+                _leftFrontSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow + 2, robotStartCol + 2, DIRECTION.EAST);
+                _leftBackSensor = new Sensor(RobotConstant.SHORT_IR_MIN, 3, robotStartRow, robotStartCol + 2, DIRECTION.EAST);
+                _rightSensor = new Sensor(RobotConstant.LONG_IR_MIN, RobotConstant.LONG_IR_MAX, robotStartRow, robotStartCol, DIRECTION.WEST);
 
                 _sensors.add(_frontLeftSensor);
                 _sensors.add(_frontRightSensor);
                 _sensors.add(_frontSensor);
                 _sensors.add(_leftFrontSensor);
-                _sensors.add(_leftMidSensor);
+                _sensors.add(_leftBackSensor);
                 _sensors.add(_rightSensor);
                 break;
             default:
@@ -1303,7 +1640,6 @@ public class Robot {
             starDirection = directionIndicator(currentIndex, openSet.get(lowestIndex), starDirection);
             currentIndex = openSet.get(lowestIndex);
             openSet.remove(lowestIndex);
-            System.out.println(Catch);
             if (currentIndex == goal) {
                 midDirection = starDirection;
                 return shortestPathResult(cameFrom, currentIndex, start);
@@ -1421,10 +1757,10 @@ public class Robot {
                 System.out.println("");
             }
         }
-        for (int i = 0; i < shortestPath.size(); i++) //Printing of shortest path result
-        {
-            System.out.print(shortestPath.get(i) + " -> ");//@@@@@@@@@@@@@@@@@@@@@@@@ 
-        }
+//        for (int i = 0; i < shortestPath.size(); i++) //Printing of shortest path result
+//        {
+//            System.out.print(shortestPath.get(i) + " -> ");//@@@@@@@@@@@@@@@@@@@@@@@@ 
+//        }
         System.out.println("");
         System.out.println("Movements: " + sendSerialMovement(shortestPath));
         System.out.println("Steps: " + sendSerialMovementSteps(shortestPath));
@@ -1467,7 +1803,7 @@ public class Robot {
                             nextIndex = shortestPath.get(j + 1);
                             nextCol = ConvertCol(nextIndex);
                             nextRow = ConvertRow(nextIndex);
-                            System.out.println("grid[" + nextRow + "][" + nextCol + "]");
+                            //System.out.println("grid[" + nextRow + "][" + nextCol + "]");
                             if ((nextRow == (gridRow + 1) && nextCol == gridCol)) {
                                 nextDir = DIRECTION.SOUTH;
                             } else if ((nextRow == (gridRow - 1) && nextCol == gridCol)) {
