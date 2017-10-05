@@ -325,6 +325,39 @@ public class MazeSimulator extends JPanel {
             }
         });
         mainButtons.add(btn_SetMid);
+        
+        JButton btn_PhyExplore = new JButton("Physical Explore");
+        btn_PhyExplore.setFont(new Font("Arial", Font.BOLD, 18));
+        btn_PhyExplore.setMargin(new Insets(10, 15, 10, 15));
+        btn_PhyExplore.setFocusPainted(false);
+
+        btn_PhyExplore.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                // Clear the current map
+                System.out.println("Exploring Map..");
+                //robotMap.resetRobotMap();
+                
+                // Set up the robot
+                roboCop.resetRobotState(startPosRow, startPosCol,startDir);
+                robotMap.resetRobotMap();
+                roboCop.setRobotMap(robotMap);
+                roboCop.markStartAsExplored();
+//                System.out.println("\nRobot Map Row, Col: " + roboCop.getCurrentPosX()
+//                        + ", " + roboCop.getCurrentPosY());
+//                System.out.println("Robot Direction: " + roboCop.getDirection().toString());
+
+                // Show the robot map frame
+                CardLayout cl = ((CardLayout) mainPanel.getLayout());
+                cl.show(mainPanel, "ROBOT MAP");
+
+                // Give the robot map focus
+                robotMap.setFocusable(true);
+                robotMap.requestFocusInWindow();
+                roboCop.setMapUI(mapUI);  
+                roboCop.startPhysicalExplore();
+            }
+        });
+        mainButtons.add(btn_PhyExplore);
     
         //-----------------------------------------------------------------------------//
         

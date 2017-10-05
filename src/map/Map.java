@@ -45,7 +45,8 @@ public class Map extends JPanel {
 	 * @return True if the specified row and column is within the start zone
 	 */
 	public boolean isStartZone(int row, int col) {
-		return (row >= 0 && row <= 2 && col >= 0 && col <= 2);
+		//return (row >= 0 && row <= 2 && col >= 0 && col <= 2);
+                return ((row >= (Constants.START_GRID_ROW)) && (row <= (Constants.START_GRID_ROW +2)) && (col >= (Constants.START_GRID_COL)) && (col <= (Constants.START_GRID_COL +2)));
 	}
 	
 	/**
@@ -56,10 +57,8 @@ public class Map extends JPanel {
 	 * @return True if the specified row and column is within the goal zone
 	 */
 	public boolean isGoalZone(int row, int col) {
-		return ((row <= (Constants.MAP_ROWS - 1))
-				&& (row >= (Constants.MAP_ROWS - 3))
-				&& (col <= (Constants.MAP_COLS - 1))
-				&& (col >= (Constants.MAP_COLS - 3)));
+		//return ((row <= (Constants.MAP_ROWS - 1)) && (row >= (Constants.MAP_ROWS - 3)) && (col <= (Constants.MAP_COLS - 1)) && (col >= (Constants.MAP_COLS - 3)));
+                return ((row >= (Constants.GOAL_GRID_ROW)) && (row <= (Constants.GOAL_GRID_ROW +2)) && (col >= (Constants.GOAL_GRID_COL)) && (col <= (Constants.GOAL_GRID_COL +2)));
 	}
         
         public boolean isMidZone(int row, int col, int midRow, int midCol) {

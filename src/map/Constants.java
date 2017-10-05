@@ -17,10 +17,14 @@ public final class Constants {
 	// Map size
 	public static final int MAP_COLS = 15;
 	public static final int MAP_ROWS = 20;
+        
+        //Start grid information
+        public static final int START_GRID_ROW = 17;
+        public static final int START_GRID_COL = 0;
 	
 	// Goal grid information
-	public static final int GOAL_GRID_ROW = 18;
-	public static final int GOAL_GRID_COL = 14;
+	public static final int GOAL_GRID_ROW = 0;
+	public static final int GOAL_GRID_COL = 12;
 	
 	public static final Color C_GRID_LINE = Color.GRAY;
 	public static final int GRID_LINE_WEIGHT = 1;

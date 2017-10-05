@@ -29,8 +29,8 @@ public class MapUI extends Map {
     private int _mapHeight = 0;
     
     // Mid Point
-    public static int midRow = 0;
-    public static int midCol = 0;
+    public static int midRow = Constants.START_GRID_ROW;
+    public static int midCol = Constants.START_GRID_COL;
 
     // For rendering the map efficiently
     private MapGrid[][] _mapGrids = null;
