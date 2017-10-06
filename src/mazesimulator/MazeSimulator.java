@@ -47,6 +47,7 @@ public class MazeSimulator extends JPanel {
     private static int startPosRow = RobotConstant.DEFAULT_START_ROW;
     private static int startPosCol = RobotConstant.DEFAULT_START_COL;
     private static DIRECTION startDir = RobotConstant.DEFAULT_START_DIR;
+    private static DIRECTION spStartDir = RobotConstant.DEFAULT_START_SP_DIR;
     
     // The robot
     private static robot.Robot roboCop = null;
@@ -251,7 +252,7 @@ public class MazeSimulator extends JPanel {
             public void mousePressed(MouseEvent e) {
                 // Clear the current map
                 System.out.println("Fastest Path..");
-                roboCop.resetRobotState(startPosRow, startPosCol,startDir);
+                roboCop.resetRobotState(startPosRow, startPosCol,spStartDir);
                 roboCop.startShortestPath(robotMap.generateShortestPathMap());
             }
         });
@@ -358,6 +359,18 @@ public class MazeSimulator extends JPanel {
             }
         });
         mainButtons.add(btn_PhyExplore);
+        
+        JButton btn_PhyFastest = new JButton("Physical Fastest Path");
+        btn_PhyFastest.setFont(new Font("Arial", Font.BOLD, 18));
+        btn_PhyFastest.setMargin(new Insets(10, 15, 10, 15));
+        btn_PhyFastest.setFocusPainted(false);
+
+        btn_PhyFastest.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                roboCop.startPhysicalShortestPath();
+            }
+        });
+        mainButtons.add(btn_PhyFastest);
     
         //-----------------------------------------------------------------------------//
         

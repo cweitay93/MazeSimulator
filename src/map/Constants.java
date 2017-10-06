@@ -20,7 +20,7 @@ public final class Constants {
         
         //Start grid information
         public static final int START_GRID_ROW = 17;
-        public static final int START_GRID_COL = 0;
+        public static final int START_GRID_COL = 12;
 	
 	// Goal grid information
 	public static final int GOAL_GRID_ROW = 0;
