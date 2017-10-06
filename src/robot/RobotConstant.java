@@ -70,9 +70,9 @@ public final class RobotConstant {
 	
 	// Robot Default Configuration
 	public static final int DEFAULT_START_ROW = 17; // Changed to 1 based on ROBOT_SIZE
-	public static final int DEFAULT_START_COL = 12;
-	public static final DIRECTION DEFAULT_START_DIR = DIRECTION.WEST;
-        public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.WEST;
+	public static final int DEFAULT_START_COL = 0;
+	public static final DIRECTION DEFAULT_START_DIR = DIRECTION.NORTH;
+        public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.NORTH;
 	
 	// Robot Exploration Configuration
 	public static final int DEFAULT_STEPS_PER_SECOND = 10;
