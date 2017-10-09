@@ -12,7 +12,7 @@ public class CommsMgr {
     // For communication with the Raspberry-Pi
     private static final String HOST = "192.168.2.200";
     //private static final String HOST = "localhost";
-    private static final int PORT = 1248;
+    private static final int PORT = 1253;
 
     public static final String MSG_TYPE_ARDUINO = "a";
     public static final String MSG_TYPE_ANDROID = "b";

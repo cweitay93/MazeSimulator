@@ -16,7 +16,7 @@ public final class RobotConstant {
 	public static final int SHORT_IR_MAX = 3;
 	
 	public static final int LONG_IR_MIN = 1;
-	public static final int LONG_IR_MAX = 5;
+	public static final int LONG_IR_MAX = 4;
 	
 	public static enum DIRECTION {
 		NORTH, EAST, SOUTH, WEST;
@@ -72,7 +72,7 @@ public final class RobotConstant {
 	public static final int DEFAULT_START_ROW = 17; // Changed to 1 based on ROBOT_SIZE
 	public static final int DEFAULT_START_COL = 12;
 	public static final DIRECTION DEFAULT_START_DIR = DIRECTION.WEST;
-        public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.WEST;
+        public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.NORTH;
 	
 	// Robot Exploration Configuration
 	public static final int DEFAULT_STEPS_PER_SECOND = 10;

@@ -76,6 +76,7 @@ public class Robot {
     private transient boolean _bPhyExStarted = false;
     private transient static final String START_PHY_EXPLORE = "e";
     private transient String _phyExCmdMsg = null;
+    private transient String _phyExSimMsg = "";
     private transient int _movesSinceLastCalibration = 0;
     private transient static final int MAX_MOVES_BEFORE_CALIBRATION = 5;
 
@@ -99,7 +100,7 @@ public class Robot {
     int G = 0;
     int j = 0;
     int k = 0;
-    int u = 0;
+    int validateCount = 0;
     int totalRotation = 0;
 
     private ArrayList<Integer> _unexploredGrids = null;
@@ -1267,9 +1268,9 @@ public class Robot {
 
                 _sensors.add(_leftFrontSensor);
                 _sensors.add(_leftBackSensor);
-                _sensors.add(_frontLeftSensor);
-                _sensors.add(_frontSensor);
                 _sensors.add(_frontRightSensor);
+                _sensors.add(_frontSensor);
+                _sensors.add(_frontLeftSensor);
                 _sensors.add(_rightSensor);
                 break;
             case WEST:
@@ -1282,9 +1283,9 @@ public class Robot {
 
                 _sensors.add(_leftFrontSensor);
                 _sensors.add(_leftBackSensor);
-                _sensors.add(_frontLeftSensor);
-                _sensors.add(_frontSensor);
                 _sensors.add(_frontRightSensor);
+                _sensors.add(_frontSensor);
+                _sensors.add(_frontLeftSensor);
                 _sensors.add(_rightSensor);
                 break;
             case EAST:
@@ -1297,9 +1298,9 @@ public class Robot {
 
                 _sensors.add(_leftFrontSensor);
                 _sensors.add(_leftBackSensor);
-                _sensors.add(_frontLeftSensor);
-                _sensors.add(_frontSensor);
                 _sensors.add(_frontRightSensor);
+                _sensors.add(_frontSensor);
+                _sensors.add(_frontLeftSensor);
                 _sensors.add(_rightSensor);
                 break;
             case SOUTH:
@@ -1312,9 +1313,9 @@ public class Robot {
 
                 _sensors.add(_leftFrontSensor);
                 _sensors.add(_leftBackSensor);
-                _sensors.add(_frontLeftSensor);
-                _sensors.add(_frontSensor);
                 _sensors.add(_frontRightSensor);
+                _sensors.add(_frontSensor);
+                _sensors.add(_frontLeftSensor);
                 _sensors.add(_rightSensor);
                 break;
             default:
@@ -2054,11 +2055,11 @@ public class Robot {
                     }
                     return;
                 } else if (_phyExploreTimer != null && _bExplorationComplete) {
-                    _phyExploreTimer.stop();
-                    _phyExploreTimer = null;
+//                    _phyExploreTimer.stop();
+//                    _phyExploreTimer = null;
+                    stopPhysicalExploration();
                 } else if (_bPhyExStarted) {
                     // Make the next move
-                    //makeNextMove();
                     makeNextPhysicalMove();
                     //System.out.println("making next move");
                     // Update elapsed time
@@ -2069,22 +2070,16 @@ public class Robot {
                     _phyExRcvMsg = mgr.recvMsg();
                     //_bPhyExStarted = true;
 
-                    if (testCount < 1) {
-                        String outputMsg1 = "e";
-                        mgr.sendMsg(outputMsg1, CommsMgr.MSG_TYPE_ARDUINO, false);
-                        testCount++;
-                    }
-//                    if (_phyExRcvMsg != null && _phyExRcvMsg.equals("okay")) {
-//                        requestSensorReadings();
-//                    } 
-//                    else if (_phyExRcvMsg != null && _phyExRcvMsg.length() > 5) {
-//                        System.out.println(_phyExRcvMsg);
+//                    if (testCount < 1) {
+//                        String outputMsg1 = "e";
+//                        mgr.sendMsg(outputMsg1, CommsMgr.MSG_TYPE_ARDUINO, false);
+//                        testCount++;
 //                    }
                     
-                    if (_phyExRcvMsg != null /*&& _phyExRcvMsg.equals(START_PHY_EXPLORE)*/) {
+                    if (_phyExRcvMsg != null && _phyExRcvMsg.equals(START_PHY_EXPLORE)) {
                         _bPhyExStarted = true;
-//                        String startMsg = "e";
-//                        mgr.sendMsg(startMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        String startMsg = "e";
+                        mgr.sendMsg(startMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
 
                         System.out.println("_bPhyExStarted is TRUE!");
 
@@ -2115,7 +2110,7 @@ public class Robot {
             _phyExploreTimer = null;
         }
 
-        System.out.println(CommsMgr.getCommsMgr().recvMsg());
+        //System.out.println(CommsMgr.getCommsMgr().recvMsg());
 
         // Reset all variables
         _phyExploreTimer = null;
@@ -2190,20 +2185,20 @@ public class Robot {
                         return;
                     }
                     
-                    if (_phySpRcvMsg != null && _phySpRcvMsg.equals("f")) {
-                        String outputMsg2 = "WWWWWWAWWWDWWWWDWWWAWWWWWWWb";
-                        mgr.sendMsg(outputMsg2, CommsMgr.MSG_TYPE_ARDUINO, false);
-                        _bPhySpStarted = true;
-//                    } else if (!_bPhySpStarted
-//                            && _phySpRcvMsg.equals(START_PHY_SP)) {
-//
+//                    if (_phySpRcvMsg != null && _phySpRcvMsg.equals("f")) {
+//                        String outputMsg2 = "WWWWWWAWWWDWWWWDWWWAWWWWWWWb";
+//                        mgr.sendMsg(outputMsg2, CommsMgr.MSG_TYPE_ARDUINO, false);
 //                        _bPhySpStarted = true;
-//                        System.out.println("Rcv Msg: " + _phySpRcvMsg);
-//                        System.out.println("_bPhySpStarted is TRUE!");
-//
-//                        //requestSensorReadings();
+                    } else if (!_bPhySpStarted
+                            && _phySpRcvMsg.equals(START_PHY_SP)) {
+
+                        _bPhySpStarted = true;
+                        System.out.println("Rcv Msg: " + _phySpRcvMsg);
+                        System.out.println("_bPhySpStarted is TRUE!");
+
+                        //requestSensorReadings();
 //                    }
-                    }
+//                    }
                 }
 
 //                System.out.println("startPhysicalSP() -> _bPhySpStarted = "
@@ -2238,40 +2233,31 @@ public class Robot {
 
         if (_phyExRcvMsg != null) {
             System.out.println("arduino msg: "+_phyExRcvMsg);
-//            if(_phyExRcvMsg.equals("w")|| _phyExRcvMsg.equals("a") || _phyExRcvMsg.equals("s") || _phyExRcvMsg.equals("d")){
-//                switch(_phyExRcvMsg){
-//                    case "w":
-//                        moveForward();
-//                        break;
-//                    case "a":
-//                        rotateLeft();
-//                        break;
-//                    case "d":
-//                        rotateRight();
-//                        break;
-//                    case "s":
-//                        rotate180();
-//                        break;
-//                    default:
-//                        break;
-//                }
-//                _robotMap.revalidate();
-//                _robotMap.repaint();
-//                requestSensorReadings();
-//            } else 
-            if(_phyExRcvMsg.length() == 1)
+            if(_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("c")){
+                System.out.println("i am in 1");
+                requestSensorReadings();
+                validateCount++;
                 return;
-            if (_phyExRcvMsg.length() > 2){
-            // Sense its surroundings using actual sensor readings
-                this.physicalSense(_phyExRcvMsg);
-                
-                _robotMap.revalidate();
-                _robotMap.repaint();
-                // Logic to make the next move
-                this.physicalPossibleMove();
-            
             }
-            
+            else if (_phyExRcvMsg.length() > 3){
+                System.out.println("i am in 2");
+                if(validateCount >= 1){
+                    System.out.println("i am in 3");
+                // Sense its surroundings using actual sensor readings
+                    this.physicalSense(_phyExRcvMsg);
+
+                    _robotMap.revalidate();
+                    _robotMap.repaint();
+                    // Logic to make the next move
+                    this.physicalPossibleMove();
+                    validateCount = 0;
+                } 
+                else {
+                    System.out.println("i am in 4");
+                    requestSensorReadings();
+                    validateCount++;
+                }
+            }
             _phyExRcvMsg = null;
         }
     }
@@ -2346,8 +2332,10 @@ public class Robot {
                     //robotMapGrids[gridRow][gridCol].setExplored(true);
                     if (!_robotMap.isStartZone(gridRow, gridCol) && !_robotMap.isGoalZone(gridRow, gridCol)) {
                         if ((gridRow >= 0 && gridRow < 20) && (gridCol >= 0 && gridCol < 15)) {
-                            if(!robotMapGrids[gridRow][gridCol].isObstacle())
+                            if(!robotMapGrids[gridRow][gridCol].isObstacle()){
                                 robotMapGrids[gridRow][gridCol].markAsObstacle();
+                                _phyExSimMsg+= ((gridRow *15) + gridCol) + ",";
+                            }
                         }
                         
                     }
@@ -2356,16 +2344,20 @@ public class Robot {
                 }
             }
             sensorIndex++;
-        }
+        }  
+//        if(_phyExSimMsg != null){
+//            String simMsg = _phyExSimMsg.substring(0, _phyExSimMsg.length()-1);
+//            mgr.sendMsg(simMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+//        }
     }
 
     public void physicalPossibleMove() {
         
-        if(_movesSinceLastCalibration >= MAX_MOVES_BEFORE_CALIBRATION){
-            requestCalibration();
-            _movesSinceLastCalibration = 0;
-            return;
-        }
+//        if(_movesSinceLastCalibration >= MAX_MOVES_BEFORE_CALIBRATION){
+//            requestCalibration();
+//            _movesSinceLastCalibration = 0;
+//            return;
+//        }
 
         // Robot reached goal zone
         if (withinGoalZone(currentRow, currentCol)) {
@@ -2540,6 +2532,7 @@ public class Robot {
         if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
             rotateLeft();
             _phyExCmdMsg = "A";
+            
         } // (frontWall AND No rightWall)
         else if (frontWall && !rightWall) {
             rotateRight();
@@ -2555,12 +2548,19 @@ public class Robot {
 
         // Save current leftWall state into _bPreviousLeftWall
         _bPreviousLeftWall = leftWall;
-        _movesSinceLastCalibration++;
+//        _movesSinceLastCalibration++;
         
         if (_phyExCmdMsg != null) {
             String outputMsg = _phyExCmdMsg;
+            //String outputMsgR = "R";
+            String outputMsg2 = _phyExCmdMsg + "," + _phyExSimMsg;
+            outputMsg2 = outputMsg2.substring(0,outputMsg2.length()-1);
             mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-            _phyExCmdMsg = null;
+            //mgr.sendMsg(outputMsgR, CommsMgr.MSG_TYPE_ARDUINO, false);
+            mgr.sendMsg(outputMsg2, CommsMgr.MSG_TYPE_ANDROID, false);
+            //requestSensorReadings();
+            _phyExSimMsg = "";
+            //_phyExCmdMsg = null;
         }
     }
 
