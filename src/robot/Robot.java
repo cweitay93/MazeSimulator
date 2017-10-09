@@ -1448,31 +1448,32 @@ public class Robot {
         double lowestfScore = 9999;
         System.out.println(direction);
         System.out.println(start);
-        ArrayList<Integer> decisionStart = new ArrayList<Integer>();
+        ArrayList<Integer> decisionStartWTF = new ArrayList<Integer>();
         int j = 0;
         for (int i = 0; i < openSet.size(); i++) {
             if (fScore[openSet.get(i)] <= lowestfScore) {
                 lowestfScore = fScore[openSet.get(i)];
-                decisionStart.add(i);
+                decisionStartWTF.add(i);
+                System.out.println("I have: " + openSet.get(i));
             }
         }
-        for (j = 0; j < decisionStart.size(); j++) {
+        for (j = 0; j < decisionStartWTF.size(); j++) {
             switch (direction) {
                 case NORTH:
                     if ((start - 15) == openSet.get(j)) {
-                        return decisionStart.get(j);
+                        return decisionStartWTF.get(j);
                     }
                 case EAST:
                     if ((start + 1) == openSet.get(j)) {
-                        return decisionStart.get(j);
+                        return decisionStartWTF.get(j);
                     }
                 case WEST:
                     if ((start - 1) == openSet.get(j)) {
-                        return decisionStart.get(j);
+                        return decisionStartWTF.get(j);
                     }
                 case SOUTH:
                     if ((start + 15) == openSet.get(j)) {
-                        return decisionStart.get(j);
+                        return decisionStartWTF.get(j);
                     }
             }
         }
@@ -1662,18 +1663,20 @@ public class Robot {
             possibleFastestPath.add(aStarSearch(start, goal, mapBit, possibleDirection.get(i)));
             Collections.reverse(possibleFastestPath.get(i));
             System.out.println("Path: for "+ i + " is " + possibleFastestPath.get(i));
-            //callforFun = sendSerialMovement(possibleFastestPath.get(i));
+            callforFun = sendSerialMovement(possibleFastestPath.get(i));
             compareRotation.add(totalRotation);
             totalRotation = 0;
             System.out.println("Rotation: " + compareRotation.get(i));
         }
         for(int i = 0; i < compareRotation.size(); i++){
-            if(lowestNumOfRotate <=compareRotation.get(i)){
+            if(lowestNumOfRotate >=compareRotation.get(i)){
                 lowestNumOfRotate = compareRotation.get(i);
                 lowestNumOfRotateIndex = i;
             }
         }
+        System.out.println("LOWEST " + compareRotation.get(lowestNumOfRotateIndex));
         Collections.reverse(possibleFastestPath.get(lowestNumOfRotateIndex));
+        System.out.println(possibleFastestPath.get(lowestNumOfRotateIndex));
         return possibleFastestPath.get(lowestNumOfRotateIndex);    
     }
 
@@ -1690,7 +1693,7 @@ public class Robot {
         int currentIndex = start;
         DIRECTION starDirection = adirection;
         ArrayList Catch = new ArrayList<Integer>();
-//        int decisionStartFlag = 0;
+        int decisionStartFlag = 0;
 
         Arrays.fill(closedSet, false);
         Arrays.fill(cameFrom, -1);
@@ -1702,14 +1705,15 @@ public class Robot {
         fScore[start] = heuristicDist(start, goal);
 
         while (openSet.size() != 0) {
-//            if (decisionStartFlag == 1) {
-//                System.out.println("decisionStartFlag: " + decisionStartFlag);
-//                lowestIndex = decisionStart(fScore, openSet, starDirection, start);
-//                decisionStartFlag++;
-//            } else{
+            if (decisionStartFlag == 1) {
+                System.out.println("decisionStartFlag: " + decisionStartFlag);
+                lowestIndex = decisionStart(fScore, openSet, starDirection, start);
+                System.out.println("1 FORCE INDEX: " +openSet.get(lowestIndex));
+                decisionStartFlag++;
+            } else{
             lowestIndex = minimumScore(fScore, openSet);
-//                decisionStartFlag++;
-//            }
+                decisionStartFlag++;
+            }
             starDirection = directionIndicator(currentIndex, openSet.get(lowestIndex), starDirection);
             currentIndex = openSet.get(lowestIndex);
             openSet.remove(lowestIndex);
@@ -1777,11 +1781,11 @@ public class Robot {
         }
 //
         if (_mapUI.getMidIndex() == start || _mapUI.getMidIndex() == end) {
-            shortestPath = aStarSearch(start, end, mapBit, aDirection);
+            shortestPath = FastestPath(start, end, mapBit, aDirection);
             Collections.reverse(shortestPath);
         } else {
-            shortestPath1 = aStarSearch(start, mid, mapBit, aDirection);
-            shortestPath2 = aStarSearch(mid, end, mapBit, midDirection);
+            shortestPath1 = FastestPath(start, mid, mapBit, aDirection);
+            shortestPath2 = FastestPath(mid, end, mapBit, midDirection);
 
             shortestPath.addAll(shortestPath2);                                                                 //concatenate of 2 Arraylist
             shortestPath.addAll(shortestPath1);
