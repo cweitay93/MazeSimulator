@@ -452,7 +452,7 @@ public class Robot {
             } else {
                 exploreUnexplored();
             }
-            System.out.println("test");
+            //System.out.println("test");
             return;
         }
 
@@ -1570,7 +1570,7 @@ public class Robot {
 //        }
 //        return movementArrayList;
 //    }
-   public ArrayList<String> sendSerialMovementSteps(ArrayList<Integer> shortestPathResult) {
+    public ArrayList<String> sendSerialMovementSteps(ArrayList<Integer> shortestPathResult) {
         int previous = shortestPathResult.get(0);
         int previousDiff = shortestPathResult.get(0) - shortestPathResult.get(1);
         ArrayList<String> stepsArrayList = new ArrayList<String>();
@@ -1645,31 +1645,32 @@ public class Robot {
         movementArrayList += "b";
         return movementArrayList;
     }
-    public ArrayList<Integer> FastestPath(int start, int goal, int[] mapBit, DIRECTION direction){
-        ArrayList<Integer> neighbour = new ArrayList<Integer>(); 
+
+    public ArrayList<Integer> FastestPath(int start, int goal, int[] mapBit, DIRECTION direction) {
+        ArrayList<Integer> neighbour = new ArrayList<Integer>();
         ArrayList<DIRECTION> possibleDirection = new ArrayList<DIRECTION>();
         ArrayList<ArrayList<Integer>> possibleFastestPath = new ArrayList<ArrayList<Integer>>();
         ArrayList<Integer> compareRotation = new ArrayList<Integer>();
         int lowestNumOfRotate = -1;
         int lowestNumOfRotateIndex = 0;
         String callforFun = "";
-        
+
         neighbour = currentNeighbour(start, direction, mapBit);
         System.out.println("The Neighbour: " + neighbour);
-        
-        for(int i = 0; i < neighbour.size(); i++){
+
+        for (int i = 0; i < neighbour.size(); i++) {
             possibleDirection.add(directionIndicator(start, neighbour.get(i), direction));
-            System.out.println("possibleDirection: " +possibleDirection.get(i) );
+            System.out.println("possibleDirection: " + possibleDirection.get(i));
             possibleFastestPath.add(aStarSearch(start, goal, mapBit, possibleDirection.get(i)));
             Collections.reverse(possibleFastestPath.get(i));
-            System.out.println("Path: for "+ i + " is " + possibleFastestPath.get(i));
+            System.out.println("Path: for " + i + " is " + possibleFastestPath.get(i));
             callforFun = sendSerialMovement(possibleFastestPath.get(i));
             compareRotation.add(totalRotation);
             totalRotation = 0;
             System.out.println("Rotation: " + compareRotation.get(i));
         }
-        for(int i = 0; i < compareRotation.size(); i++){
-            if(lowestNumOfRotate >=compareRotation.get(i)){
+        for (int i = 0; i < compareRotation.size(); i++) {
+            if (lowestNumOfRotate >= compareRotation.get(i)) {
                 lowestNumOfRotate = compareRotation.get(i);
                 lowestNumOfRotateIndex = i;
             }
@@ -1677,7 +1678,7 @@ public class Robot {
         System.out.println("LOWEST " + compareRotation.get(lowestNumOfRotateIndex));
         Collections.reverse(possibleFastestPath.get(lowestNumOfRotateIndex));
         System.out.println(possibleFastestPath.get(lowestNumOfRotateIndex));
-        return possibleFastestPath.get(lowestNumOfRotateIndex);    
+        return possibleFastestPath.get(lowestNumOfRotateIndex);
     }
 
     public ArrayList<Integer> aStarSearch(int start, int goal, int[] mapBit, DIRECTION adirection) {                        //Function of A* search algorithm
@@ -1708,10 +1709,10 @@ public class Robot {
             if (decisionStartFlag == 1) {
                 System.out.println("decisionStartFlag: " + decisionStartFlag);
                 lowestIndex = decisionStart(fScore, openSet, starDirection, start);
-                System.out.println("1 FORCE INDEX: " +openSet.get(lowestIndex));
+                System.out.println("1 FORCE INDEX: " + openSet.get(lowestIndex));
                 decisionStartFlag++;
-            } else{
-            lowestIndex = minimumScore(fScore, openSet);
+            } else {
+                lowestIndex = minimumScore(fScore, openSet);
                 decisionStartFlag++;
             }
             starDirection = directionIndicator(currentIndex, openSet.get(lowestIndex), starDirection);
@@ -2079,7 +2080,6 @@ public class Robot {
 //                        mgr.sendMsg(outputMsg1, CommsMgr.MSG_TYPE_ARDUINO, false);
 //                        testCount++;
 //                    }
-                    
                     if (_phyExRcvMsg != null && _phyExRcvMsg.equals(START_PHY_EXPLORE)) {
                         _bPhyExStarted = true;
                         String startMsg = "e";
@@ -2115,7 +2115,6 @@ public class Robot {
         }
 
         //System.out.println(CommsMgr.getCommsMgr().recvMsg());
-
         // Reset all variables
         _phyExploreTimer = null;
         _bPhyExConnected = false;
@@ -2127,7 +2126,7 @@ public class Robot {
         System.out.println("Stopping physical exploration!!");
     }
 
-    public void startPhysicalShortestPath() {
+    public void startPhysicalShortestPath(String exploredMap) {
         // Calculate timer intervals based on the user selected steps per second
         _timerIntervals = ((1000 * 1000 / _stepsPerSecond) / 1000);
         System.out.println("Steps Per Second: " + _stepsPerSecond
@@ -2188,21 +2187,56 @@ public class Robot {
                         _phySpErrors++;
                         return;
                     }
-                    
+
 //                    if (_phySpRcvMsg != null && _phySpRcvMsg.equals("f")) {
 //                        String outputMsg2 = "WWWWWWAWWWDWWWWDWWWAWWWWWWWb";
 //                        mgr.sendMsg(outputMsg2, CommsMgr.MSG_TYPE_ARDUINO, false);
 //                        _bPhySpStarted = true;
-                    } else if (!_bPhySpStarted
-                            && _phySpRcvMsg.equals(START_PHY_SP)) {
+                } else if (!_bPhySpStarted
+                        && _phySpRcvMsg.equals(START_PHY_SP)) {
 
-                        _bPhySpStarted = true;
-                        System.out.println("Rcv Msg: " + _phySpRcvMsg);
-                        System.out.println("_bPhySpStarted is TRUE!");
+                    _bPhySpStarted = true;
+                    System.out.println("Rcv Msg: " + _phySpRcvMsg);
+                    System.out.println("_bPhySpStarted is TRUE!");
 
-                        //requestSensorReadings();
-//                    }
-//                    }
+                    String map = exploredMap;
+                    int mapBit[] = new int[300];                                                                        //Map in Binary     
+                    int start = ConvertToIndex(Constants.START_GRID_ROW, Constants.START_GRID_COL);                                                                                     //Start Point
+                    int end = ConvertToIndex(Constants.GOAL_GRID_ROW, Constants.GOAL_GRID_COL);                                                                                      //Goal Point
+                    int mid = _mapUI.getMidIndex();                                                                                      //Mid Point
+                    DIRECTION aDirection = direction;
+                    String temp;                                                                                        //Temporary storage for 1 Hex to 4 Bit conversion                                                                                    
+                    String bitString = "";                                                                              //Initialization of map in binary
+                    ArrayList<Integer> shortestPath = new ArrayList<Integer>();
+                    ArrayList<Integer> shortestPath1;                                                                   //Shortest Path Result
+                    ArrayList<Integer> shortestPath2;                                                                   //Shortest Path from mid to goal point 
+
+                    for (int i = 0; i < 76; i++) {
+                        temp = String.format("%04d", Integer.parseInt(hexToBin(map.substring(i, i + 1))));                //Hexadecimal to Binary conversion
+                        bitString += temp;
+                    }
+
+                    bitString = bitString.substring(2, bitString.length() - 2);                                           //Remove first 2 bit and last 2 bit of the String  
+
+                    for (int h = 0; h < 300; h++) {
+                        mapBit[h] = Integer.parseInt(bitString.substring(h, h + 1));                                      //String to Int Conversion
+                    }
+//
+                    if (_mapUI.getMidIndex() == start || _mapUI.getMidIndex() == end) {
+                        shortestPath = FastestPath(start, end, mapBit, aDirection);
+                        Collections.reverse(shortestPath);
+                    } else {
+                        shortestPath1 = FastestPath(start, mid, mapBit, aDirection);
+                        shortestPath2 = FastestPath(mid, end, mapBit, midDirection);
+
+                        shortestPath.addAll(shortestPath2);                                                                 //concatenate of 2 Arraylist
+                        shortestPath.addAll(shortestPath1);
+                        Collections.reverse(shortestPath);
+                    }
+
+                    String fPathMsg = sendSerialMovement(shortestPath);
+                    mgr.sendMsg(fPathMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    simulateShortestPath(shortestPath);
                 }
 
 //                System.out.println("startPhysicalSP() -> _bPhySpStarted = "
@@ -2233,21 +2267,19 @@ public class Robot {
 
         // Try to get message
         _phyExRcvMsg = mgr.recvMsg();
-        
 
         if (_phyExRcvMsg != null) {
-            System.out.println("arduino msg: "+_phyExRcvMsg);
-            if(_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("c")){
+            System.out.println("arduino msg: " + _phyExRcvMsg);
+            if (_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("c")) {
                 System.out.println("i am in 1");
                 requestSensorReadings();
                 validateCount++;
                 return;
-            }
-            else if (_phyExRcvMsg.length() > 3){
+            } else if (_phyExRcvMsg.length() > 3) {
                 System.out.println("i am in 2");
-                if(validateCount >= 1){
+                if (validateCount >= 1) {
                     System.out.println("i am in 3");
-                // Sense its surroundings using actual sensor readings
+                    // Sense its surroundings using actual sensor readings
                     this.physicalSense(_phyExRcvMsg);
 
                     _robotMap.revalidate();
@@ -2255,8 +2287,7 @@ public class Robot {
                     // Logic to make the next move
                     this.physicalPossibleMove();
                     validateCount = 0;
-                } 
-                else {
+                } else {
                     System.out.println("i am in 4");
                     requestSensorReadings();
                     validateCount++;
@@ -2323,12 +2354,13 @@ public class Robot {
                     if ((gridRow >= 0 && gridRow < 20) && (gridCol >= 0 && gridCol < 15)) {
                         robotMapGrids[gridRow][gridCol].setExplored(true);
                     }
-                    if((sensorIndex > 1 && sensorIndex < 5) && robotMapGrids[gridRow][gridCol].isObstacle())
+                    if ((sensorIndex > 1 && sensorIndex < 5) && robotMapGrids[gridRow][gridCol].isObstacle()) {
                         robotMapGrids[gridRow][gridCol].setObstacle(false);
+                    }
 
-                } else if(currGrid > s.getMaxRange()){
+                } else if (currGrid > s.getMaxRange()) {
                     break;
-                } else if(currGrid == obstacleAtGrid) {
+                } else if (currGrid == obstacleAtGrid) {
 
                     // Current grid is less than or equal to max sensor range,
                     // but greater than number of free grids
@@ -2336,19 +2368,19 @@ public class Robot {
                     //robotMapGrids[gridRow][gridCol].setExplored(true);
                     if (!_robotMap.isStartZone(gridRow, gridCol) && !_robotMap.isGoalZone(gridRow, gridCol)) {
                         if ((gridRow >= 0 && gridRow < 20) && (gridCol >= 0 && gridCol < 15)) {
-                            if(!robotMapGrids[gridRow][gridCol].isObstacle()){
+                            if (!robotMapGrids[gridRow][gridCol].isObstacle()) {
                                 robotMapGrids[gridRow][gridCol].markAsObstacle();
-                                _phyExSimMsg+= ((gridRow *15) + gridCol) + ",";
+                                _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
                             }
                         }
-                        
+
                     }
 
                     break;
                 }
             }
             sensorIndex++;
-        }  
+        }
 //        if(_phyExSimMsg != null){
 //            String simMsg = _phyExSimMsg.substring(0, _phyExSimMsg.length()-1);
 //            mgr.sendMsg(simMsg, CommsMgr.MSG_TYPE_ANDROID, false);
@@ -2356,13 +2388,12 @@ public class Robot {
     }
 
     public void physicalPossibleMove() {
-        
+
 //        if(_movesSinceLastCalibration >= MAX_MOVES_BEFORE_CALIBRATION){
 //            requestCalibration();
 //            _movesSinceLastCalibration = 0;
 //            return;
 //        }
-
         // Robot reached goal zone
         if (withinGoalZone(currentRow, currentCol)) {
             _bReachedGoal = true;
@@ -2536,7 +2567,7 @@ public class Robot {
         if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
             rotateLeft();
             _phyExCmdMsg = "A";
-            
+
         } // (frontWall AND No rightWall)
         else if (frontWall && !rightWall) {
             rotateRight();
@@ -2553,12 +2584,12 @@ public class Robot {
         // Save current leftWall state into _bPreviousLeftWall
         _bPreviousLeftWall = leftWall;
 //        _movesSinceLastCalibration++;
-        
+
         if (_phyExCmdMsg != null) {
             String outputMsg = _phyExCmdMsg;
             //String outputMsgR = "R";
             String outputMsg2 = _phyExCmdMsg + "," + _phyExSimMsg;
-            outputMsg2 = outputMsg2.substring(0,outputMsg2.length()-1);
+            outputMsg2 = outputMsg2.substring(0, outputMsg2.length() - 1);
             mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
             //mgr.sendMsg(outputMsgR, CommsMgr.MSG_TYPE_ARDUINO, false);
             mgr.sendMsg(outputMsg2, CommsMgr.MSG_TYPE_ANDROID, false);
@@ -2571,7 +2602,7 @@ public class Robot {
     private void requestSensorReadings() {
         mgr.sendMsg("R", CommsMgr.MSG_TYPE_ARDUINO, false);
     }
-    
+
     private void requestCalibration() {
         mgr.sendMsg("C", CommsMgr.MSG_TYPE_ARDUINO, false);
     }
