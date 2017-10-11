@@ -11,9 +11,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import javax.swing.BorderFactory;
-import javax.swing.border.Border;
-
 import robot.RobotConstant.DIRECTION;
 import map.Map;
 import map.Constants;
@@ -158,23 +155,23 @@ public class RobotMap extends Map {
         }
 
         // For showing the truth values of each grid
-//        if (_bDisplayTruthValues) {
-//
-//            Font gosuFont = new Font("Arial", Font.BOLD, 14);
-//            g2.setFont(gosuFont);
-//
-//            for (int mapRow = 0; mapRow < Constants.MAP_ROWS; mapRow++) {
-//                for (int mapCol = 0; mapCol < Constants.MAP_COLS; mapCol++) {
-//
-//                    g2.setColor(isBorderWalls(mapRow, mapCol) ? Color.WHITE
-//                            : Color.BLACK);
-//                    double truthValue = _grids[mapRow][mapCol].getTruthValue();
-//                    g2.drawString(String.format("%3.2f", truthValue),
-//                            _mapGrids[mapRow][mapCol].gridX + 5,
-//                            _mapGrids[mapRow][mapCol].gridY + 22);
-//                }
-//            }
-//        }
+        if (_bDisplayTruthValues) {
+
+            Font gosuFont = new Font("Arial", Font.PLAIN, 10);
+            g2.setFont(gosuFont);
+
+            for (int mapRow = 0; mapRow < Constants.MAP_ROWS; mapRow++) {
+                for (int mapCol = 0; mapCol < Constants.MAP_COLS; mapCol++) {
+
+                    g2.setColor(_grids[mapRow][mapCol].isObstacle() ? Color.WHITE
+                            : Color.BLACK);
+                    double truthValue = _grids[mapRow][mapCol].getTruthValue();
+                    g2.drawString(String.format("%3.2f", truthValue),
+                            _mapGrids[mapRow][mapCol].gridX + 5,
+                            _mapGrids[mapRow][mapCol].gridY + 22);
+                }
+            }
+        }
 
         // Gets information about the robot
         int robotPosRow = _robot.getCurrentRow();

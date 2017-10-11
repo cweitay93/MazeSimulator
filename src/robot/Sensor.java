@@ -5,11 +5,9 @@
  */
 package robot;
 
-import java.util.ArrayList;
 import map.Grid;
 import map.Map;
 import map.Constants;
-import robot.RobotConstant;
 import robot.RobotConstant.DIRECTION;
 
 /**

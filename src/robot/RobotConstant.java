@@ -13,10 +13,10 @@ public final class RobotConstant {
 	
 	// Sensors default range (In grids)
 	public static final int SHORT_IR_MIN = 1;
-	public static final int SHORT_IR_MAX = 3;
+	public static final int SHORT_IR_MAX = 2;
 	
 	public static final int LONG_IR_MIN = 1;
-	public static final int LONG_IR_MAX = 4;
+	public static final int LONG_IR_MAX = 3;
 	
 	public static enum DIRECTION {
 		NORTH, EAST, SOUTH, WEST;
@@ -72,10 +72,10 @@ public final class RobotConstant {
 	public static final int DEFAULT_START_ROW = 17; // Changed to 1 based on ROBOT_SIZE
 	public static final int DEFAULT_START_COL = 12;
 	public static final DIRECTION DEFAULT_START_DIR = DIRECTION.WEST;
-        public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.NORTH;
+        public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.WEST;
 	
 	// Robot Exploration Configuration
-	public static final int DEFAULT_STEPS_PER_SECOND = 10;
+	public static final int DEFAULT_STEPS_PER_SECOND = 2;
 	public static final int DEFAULT_COVERAGE_LIMIT = 50;
 	public static final int DEFAULT_TIME_LIMIT = 360;
 	

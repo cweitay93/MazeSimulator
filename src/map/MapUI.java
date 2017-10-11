@@ -114,7 +114,7 @@ public class MapUI extends Map {
         }
     }
     
-    private void addMidPoint(int row, int col) {
+    public void addMidPoint(int row, int col) {
         midRow = row;
         midCol = col;
     }
