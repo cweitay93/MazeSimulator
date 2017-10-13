@@ -93,12 +93,14 @@ public class Robot {
     private transient boolean _bExploreUnexplored = false;
     private transient boolean _bExploring = false;
     ArrayList<Integer> exploreUnexploredPath;
+    private boolean _exploreUnexploredFlag = false;
     int targetGrid = 0;
     private transient boolean movingToStart = false;
 
     private DIRECTION midDirection;
     int j = 0;
     //int k = 0;
+    int startCalibration = 1;
     int validateCount = 0;
     int totalRotation = 0;
     int forwardCount = 0;
@@ -249,6 +251,7 @@ public class Robot {
         j = 0;
         validateCount = 0;
         totalRotation = 0;
+        startCalibration = 1;
 
     }
 
@@ -620,9 +623,13 @@ public class Robot {
             exploreUnexploredPath.add(currentGrid);
             Collections.reverse(exploreUnexploredPath);
             movingToStart = true;
+            _exploreUnexploredFlag = true;
         } else {
             int gridRow, gridCol, nextRow, nextCol;
             DIRECTION nextDir;
+            if(_exploreUnexploredFlag == true){
+                _exploreUnexploredFlag = false;
+            }
             if (!exploreUnexploredPath.isEmpty()) {
                 //System.out.println("before: "+exploreUnexploredPath.get(0));
                 gridCol = ConvertCol(exploreUnexploredPath.get(0));
@@ -664,9 +671,13 @@ public class Robot {
                         _phyExCmdMsg = "W";
                     }
                     exploreUnexploredPath.remove(0);
+                    if(exploreUnexploredPath.isEmpty()){
+                        _exploreUnexploredFlag = true;
+                    }
                     if (_bPhyExStarted == true && _phyExCmdMsg != null) {
                         String outputMsg = _phyExCmdMsg;
                         mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                         _phyExCmdMsg = null;
                     }
                     //System.out.println("after: "+exploreUnexploredPath.get(0));
@@ -678,7 +689,9 @@ public class Robot {
     public void exploreUnexplored() {
         int gridRow, gridCol, nextRow, nextCol;
         DIRECTION nextDir;
-
+        System.out.println("executing exploreUnexplored");
+        _exploreUnexploredFlag = false;
+       
         // Make the next move
         if (!exploreUnexploredPath.isEmpty()) {
             //System.out.println("before: "+exploreUnexploredPath.get(0));
@@ -689,6 +702,7 @@ public class Robot {
                 nextRow = ConvertRow(exploreUnexploredPath.get(1));
                 if (checkForObstacles(nextRow, nextCol)) {
                     exploreUnexploredPath.clear();
+                    _exploreUnexploredFlag = true;
                     return;
                 }
 
@@ -704,23 +718,20 @@ public class Robot {
 
                 if (checkTurnLeft(direction, nextDir)) {
                     rotateLeft();
-                    moveForward();
-                    _phyExCmdMsg = "Q";
+                    _phyExCmdMsg = "A";
                 } else if (checkTurnRight(direction, nextDir)) {
                     rotateRight();
-                    moveForward();
-                    _phyExCmdMsg = "E";
+                    _phyExCmdMsg = "D";
                 } else if (checkTurn180(direction, nextDir)) {
-                    rotateRight();
-                    rotateRight();
-                    moveForward();
-                    _phyExCmdMsg = "X";
+                    rotate180();
+                    _phyExCmdMsg = "S";
                 } else {
                     moveForward();
                     _phyExCmdMsg = "W";
+                    exploreUnexploredPath.remove(0);
                 }
 
-                exploreUnexploredPath.remove(0);
+                
                 //System.out.println("after: "+exploreUnexploredPath.get(0));
             } else if (exploreUnexploredPath.size() == 1) {
                 Grid[][] map = _robotMap.getMapGrids();
@@ -731,13 +742,17 @@ public class Robot {
                     } else {
                         rotateRight();
                         _phyExCmdMsg = "D";
+                        //requestSensorReadings();
                     }
                 }
+                
                 exploreUnexploredPath.remove(0);
                 _bExploring = false;
+                _exploreUnexploredFlag = true;
             }
         } else {
             _bExploring = false;
+            _exploreUnexploredFlag = true;
         }
     }
 
@@ -747,26 +762,69 @@ public class Robot {
         Grid endGrid = null;
         int endingGridRow = ConvertRow(target);
         int endingGridCol = ConvertCol(target);
-
-        // Scenario 5: (Row - RobotConstants.ROBOT_SIZE, Col - 1) reachable
-        if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 1)) {
-            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 1];
+        
+        /*FOR TOP TO BOTTOM*/
+//         // Scenario 5: (Row - RobotConstants.ROBOT_SIZE, Col - 1) reachable
+//        if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 1)) {
+//            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 1];
+//        } // Scenario 2: (Row - 1, Col - RobotConstants.ROBOT_SIZE) reachable
+//        else if ((endingGridRow - 1 >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow - 1, endingGridCol - RobotConstant.ROBOT_SIZE)) {
+//            endGrid = map[endingGridRow - 1][endingGridCol - RobotConstant.ROBOT_SIZE];
+//        } // Scenario 8: (Row - 1, Col + 1) reachable
+//        else if ((endingGridRow - 1 >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow - 1, endingGridCol + 1)) {
+//            endGrid = map[endingGridRow - 1][endingGridCol + 1];
+//        } // Scenario 11: (Row + 1, Col - 1) reachable
+//        else if ((endingGridRow + 1 <= 19 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 1)) {
+//            endGrid = map[endingGridRow + 1][endingGridCol - 1];
+//        }  // Scenario 6: (Row - RobotConstants.ROBOT_SIZE, Col - 2) reachable
+//        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 2)) {
+//            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 2];
+//        } // Scenario 4: (Row - RobotConstants.ROBOT_SIZE, Col) reachable
+//        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol)) {
+//            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol];
+//        } // Scenario 3: (Row - 2, Col - RobotConstants.ROBOT_SIZE) reachable
+//        else if ((endingGridRow - 2 >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow - 2, endingGridCol - RobotConstant.ROBOT_SIZE)) {
+//            endGrid = map[endingGridRow - 2][endingGridCol - RobotConstant.ROBOT_SIZE];
+//        } // Scenario 1: (Row , Col - RobotConstants.ROBOT_SIZE) reachable
+//        else if ((endingGridRow >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow, endingGridCol - RobotConstant.ROBOT_SIZE)) {
+//            endGrid = map[endingGridRow][endingGridCol - RobotConstant.ROBOT_SIZE];
+//        } // Scenario 9: (Row - 2, Col + 1) reachable
+//        else if ((endingGridRow - 2 >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow - 2, endingGridCol + 1)) {
+//            endGrid = map[endingGridRow - 2][endingGridCol + 1];
+//        } // Scenario 7: (Row , Col + 1) reachable
+//        else if ((endingGridRow >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow, endingGridCol + 1)) {
+//            endGrid = map[endingGridRow][endingGridCol + 1];
+//        } // Scenario 12: (Row + 1, Col - 2) reachable
+//        else if ((endingGridRow + 1 <= 19 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 2)) {
+//            endGrid = map[endingGridRow + 1][endingGridCol - 2];
+//        } // Scenario 10: (Row + 1, Col ) reachable
+//        else if ((endingGridRow + 1 <= 19 && endingGridCol >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol)) {
+//            endGrid = map[endingGridRow + 1][endingGridCol];
+//        } else {
+//            return 0;
+//        }
+        /*^FOR TOP TO BOTTOM*/
+        
+        /*FOR BOTTOM TO TOP*/
+        // Scenario 10: (Row + 1, Col ) reachable
+        if ((endingGridRow + 1 <= 19 && endingGridCol >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol)) {
+            endGrid = map[endingGridRow + 1][endingGridCol];
+        } // Scenario 11: (Row + 1, Col - 1) reachable
+        else if ((endingGridRow + 1 <= 19 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 1)) {
+            endGrid = map[endingGridRow + 1][endingGridCol - 1];
         } // Scenario 2: (Row - 1, Col - RobotConstants.ROBOT_SIZE) reachable
         else if ((endingGridRow - 1 >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow - 1, endingGridCol - RobotConstant.ROBOT_SIZE)) {
             endGrid = map[endingGridRow - 1][endingGridCol - RobotConstant.ROBOT_SIZE];
         } // Scenario 8: (Row - 1, Col + 1) reachable
         else if ((endingGridRow - 1 >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow - 1, endingGridCol + 1)) {
             endGrid = map[endingGridRow - 1][endingGridCol + 1];
-        } // Scenario 11: (Row + 1, Col - 1) reachable
-        else if ((endingGridRow + 1 <= 19 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 1)) {
-            endGrid = map[endingGridRow + 1][endingGridCol - 1];
-        } // Scenario 6: (Row - RobotConstants.ROBOT_SIZE, Col - 2) reachable
-        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 2)) {
-            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 2];
-        } // Scenario 4: (Row - RobotConstants.ROBOT_SIZE, Col) reachable
-        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol)) {
-            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol];
-        } // Scenario 3: (Row - 2, Col - RobotConstants.ROBOT_SIZE) reachable
+        } // Scenario 5: (Row - RobotConstants.ROBOT_SIZE, Col - 1) reachable
+        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 1 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 1)) {
+            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 1];
+        } // Scenario 12: (Row + 1, Col - 2) reachable
+        else if ((endingGridRow + 1 <= 19 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 2)) {
+            endGrid = map[endingGridRow + 1][endingGridCol - 2];
+        }  // Scenario 3: (Row - 2, Col - RobotConstants.ROBOT_SIZE) reachable
         else if ((endingGridRow - 2 >= 0 && endingGridCol - RobotConstant.ROBOT_SIZE >= 0) && !checkForObstacles(endingGridRow - 2, endingGridCol - RobotConstant.ROBOT_SIZE)) {
             endGrid = map[endingGridRow - 2][endingGridCol - RobotConstant.ROBOT_SIZE];
         } // Scenario 1: (Row , Col - RobotConstants.ROBOT_SIZE) reachable
@@ -778,16 +836,18 @@ public class Robot {
         } // Scenario 7: (Row , Col + 1) reachable
         else if ((endingGridRow >= 0 && endingGridCol + 1 <= 14) && !checkForObstacles(endingGridRow, endingGridCol + 1)) {
             endGrid = map[endingGridRow][endingGridCol + 1];
-        } // Scenario 12: (Row + 1, Col - 2) reachable
-        else if ((endingGridRow + 1 <= 19 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol - 2)) {
-            endGrid = map[endingGridRow + 1][endingGridCol - 2];
-        } // Scenario 10: (Row + 1, Col ) reachable
-        else if ((endingGridRow + 1 <= 19 && endingGridCol >= 0) && !checkForObstacles(endingGridRow + 1, endingGridCol)) {
-            endGrid = map[endingGridRow + 1][endingGridCol];
-        } else {
+        } // Scenario 6: (Row - RobotConstants.ROBOT_SIZE, Col - 2) reachable
+        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol - 2 >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol - 2)) {
+            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol - 2];
+        } // Scenario 4: (Row - RobotConstants.ROBOT_SIZE, Col) reachable
+        else if ((endingGridRow - RobotConstant.ROBOT_SIZE >= 0 && endingGridCol >= 0) && !checkForObstacles(endingGridRow - RobotConstant.ROBOT_SIZE, endingGridCol)) {
+            endGrid = map[endingGridRow - RobotConstant.ROBOT_SIZE][endingGridCol];
+        }
+        else {
             return 0;
         }
-
+        
+        /*FOR BOTTOM TO TOP*/
         return ConvertToIndex(endGrid.getRow(), endGrid.getCol());
     }
 
@@ -816,6 +876,7 @@ public class Robot {
         // Determine the change in row/column of the robot
         int deltaRow = newRow - currentRow;
         int deltaCol = newCol - currentCol;
+        //System.out.println("new row: " + newRow + " new col: " + newCol);
 
         // Update the path in the robot map
         RobotMap.PathGrid[][] pathGrids = null;
@@ -1604,18 +1665,22 @@ public class Robot {
         int previous = shortestPathResult.get(0);
         int previousDiff = shortestPathResult.get(0) - shortestPathResult.get(1);
         String movementArrayList = "";
-//        direction = DIRECTION.NORTH;
         DIRECTION moveOffRotation = directionIndicator(shortestPathResult.get(0), shortestPathResult.get(1), direction);
 
 //        System.out.println("In sendSerialMovement---");
-//        System.out.println("moveOffRotation: " + moveOffRotation);
-//        System.out.println("Real direction: " + direction);
-        while (moveOffRotation != direction) {
+        System.out.println("moveOffRotation: " + moveOffRotation);
+        System.out.println("Real direction: " + direction);
+        DIRECTION tempDir = DIRECTION.EAST;
+        while (moveOffRotation != tempDir) {
+            tempDir = true ? DIRECTION.getNext(tempDir)
+                : DIRECTION.getPrevious(tempDir);
 //            System.out.println("Turning.. Now direction is " + direction);
-//            System.out.println("Toh");
-            rotateRight();
+            //System.out.println("Toh");
+            //rotateRight();
             movementArrayList += "D";
         }
+        
+        movementArrayList += "C";
 
         for (int i = 1; i < shortestPathResult.size(); i++) {
             int diff = previous - shortestPathResult.get(i);
@@ -1770,6 +1835,7 @@ public class Robot {
         int start = ConvertToIndex(Constants.START_GRID_ROW, Constants.START_GRID_COL);                                                                                     //Start Point
         int end = ConvertToIndex(Constants.GOAL_GRID_ROW, Constants.GOAL_GRID_COL);                                                                                      //Goal Point
         int mid = _mapUI.getMidIndex();                                                                                      //Mid Point
+        System.out.println("start shortest path direction: "+direction);
         DIRECTION aDirection = direction;
         String temp;                                                                                        //Temporary storage for 1 Hex to 4 Bit conversion                                                                                    
         String bitString = "";                                                                              //Initialization of map in binary
@@ -1913,9 +1979,6 @@ public class Robot {
                             } else {
                                 moveForward();
                             }
-//                            newCol = currentCol;
-//                            newRow = currentRow;
-//                            updatePosition(oldRow, oldCol, newRow, newCol);
                         }
                         j++;
                     }
@@ -2072,6 +2135,7 @@ public class Robot {
 //                    _phyExploreTimer.stop();
 //                    _phyExploreTimer = null;
                     stopPhysicalExploration();
+                    startPhysicalShortestPath(_robotMap.generateShortestPathMap());
                 } else if (_bPhyExStarted) {
                     // Make the next move
                     makeNextPhysicalMove();
@@ -2144,7 +2208,7 @@ public class Robot {
 
         // Reset all variables used
         _phySpTimer = null;
-        _bPhySpConnected = false;
+        _bPhySpConnected = true;
         _phySpErrors = 0;
         _phySpRcvMsg = null;
         _bPhySpStarted = false;
@@ -2183,34 +2247,40 @@ public class Robot {
                     }
                     return;
                 }
-
+                
+                _phySpRcvMsg = mgr.recvMsg();
                 if (!_bPhySpStarted && !_bPhyExStarted) {
                     // Try to get message
-                    _phySpRcvMsg = mgr.recvMsg();
+                    //_phySpRcvMsg = mgr.recvMsg();
                     
                     if (_phySpRcvMsg == null) {
                         _phySpErrors++;
                         return;
                     }
                     
-                    if(_phySpRcvMsg != null && _phySpRcvMsg.equals(START_PHY_SP)){
-                        System.out.println("Rcv Msg: " + _phySpRcvMsg);
-                        System.out.println("_bPhySpStarted is TRUE!");
-                        mgr.sendMsg(START_PHY_SP, CommsMgr.MSG_TYPE_ARDUINO, false);
-                        _bPhySpStarted = true;
-                    } 
-                    else if (_phySpRcvMsg != null && _phySpRcvMsg.contains("m")){
-                        String midPointMsg = _phySpRcvMsg.substring(1,_phySpRcvMsg.length() - 1);
-                        int midIndex = Integer.parseInt(midPointMsg);
-                        int midRow = ConvertRow(midIndex);
-                        int midCol = ConvertCol(midIndex);
-                        _mapUI.addMidPoint(midRow, midCol);
-                        
-                        _phySpRcvMsg = null;
+                    if(_phySpRcvMsg != null){
+                        if(_phySpRcvMsg.equals(START_PHY_SP)){
+                            System.out.println("Rcv Msg: " + _phySpRcvMsg);
+                            System.out.println("_bPhySpStarted is TRUE!");
+                            mgr.sendMsg(START_PHY_SP, CommsMgr.MSG_TYPE_ARDUINO, false);
+                            _bPhySpStarted = true;
+                            _phySpRcvMsg = null;
+
+                        } 
+                        else if ((_phySpRcvMsg.length() >= 1 && _phySpRcvMsg.length()<=3 && !_phySpRcvMsg.contains("z"))/*_phySpRcvMsg.contains("m")*/){
+                            String midPointMsg = _phySpRcvMsg; //_phySpRcvMsg.substring(1,_phySpRcvMsg.length() - 1);
+                            int midIndex = Integer.parseInt(midPointMsg);
+                            System.out.println("midIndex: "+midIndex);
+                            int midRow = ConvertRow(midIndex) - 1;
+                            int midCol = ConvertCol(midIndex) - 1;
+                            System.out.println(_mapUI);
+                            _mapUI.addMidPoint(midRow, midCol);
+
+                        }    
                     }
                 }
                 
-                if (_bPhySpStarted && _phySpRcvMsg.equals(START_PHY_SP)) {
+                if (_phySpRcvMsg!= null && _bPhySpStarted && _phySpRcvMsg.equals(START_PHY_SP)) {
 
                     String map = exploredMap;
                     int mapBit[] = new int[300];                                                                        //Map in Binary     
@@ -2246,15 +2316,14 @@ public class Robot {
                         shortestPath.addAll(shortestPath1);
                         Collections.reverse(shortestPath);
                     }
-
-                    String fPathMsg = sendSerialMovement(shortestPath);
-                    mgr.sendMsg(fPathMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-                    simulateShortestPath(shortestPath);
+                        String fPathMsg =  sendSerialMovement(shortestPath); //"WWWWDWWWWWWWWWWWWDWWWWAWWWWWZb";
+                        mgr.sendMsg(fPathMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        simulateShortestPath(shortestPath);
                     
-                    if (_phySpTimer != null) {
-                        _phySpTimer.stop();
-                        _phySpTimer = null;
-                    }
+//                    if (_phySpTimer != null) {
+//                        _phySpTimer.stop();
+//                        _phySpTimer = null;
+//                    }
                 }
             }
         });
@@ -2275,41 +2344,31 @@ public class Robot {
     }
 
     public void makeNextPhysicalMove() {
-
         // Try to get message
         _phyExRcvMsg = mgr.recvMsg();
 
-        if (_phyExRcvMsg != null) {
+        if (_phyExRcvMsg != null || _exploreUnexploredFlag == true) {
             System.out.println("arduino msg: " + _phyExRcvMsg);
-            if (_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("c")
-                    || _phyExRcvMsg.contains("q") || _phyExRcvMsg.contains("t") || _phyExRcvMsg.contains("x")) {
-                if (_phyExRcvMsg.contains("w")) {
-                    forwardCount++;
-                    System.out.println("forward count: " + forwardCount);
-                } else if (_phyExRcvMsg.contains("c")) {
-                    //do nothing
-                    System.out.println("calibrating");
-                } else {
-                    forwardCount = 0;
-                    System.out.println("forward count reset (turning)");
-                }
+            if (_phyExRcvMsg != null && (_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("c")
+                    || _phyExRcvMsg.contains("q") || _phyExRcvMsg.contains("t") || _phyExRcvMsg.contains("x"))) {
                 requestSensorReadings();
                 validateCount++;
                 return;
-            } else if (_phyExRcvMsg.length() > 3) {
-                if (validateCount >= 1) {
+            } else if ((_phyExRcvMsg == null && _exploreUnexploredFlag == true) || _phyExRcvMsg.length() > 3) {
+                if (validateCount >= 1 || _exploreUnexploredFlag == true) {
                     // Sense its surroundings using actual sensor readings
-                    this.physicalSense(_phyExRcvMsg);
+                    if(_phyExRcvMsg != null)
+                        this.physicalSense(_phyExRcvMsg);
 
                     _robotMap.revalidate();
                     _robotMap.repaint();
                     // Logic to make the next move
                     this.physicalPossibleMove();
                     validateCount = 0;
-                } else {
+                } else if(startCalibration != 0) {
                     //requestSensorReadings();
                     requestCalibration();
-                    validateCount++;
+                    startCalibration = 0;
                 }
             }
             _phyExRcvMsg = null;
@@ -2327,7 +2386,7 @@ public class Robot {
         String[] sensorReadings = sensorStr.split(";");
         int sensorIndex = 0;
         // Weightage of the sensors
-        double[] sensorWeightage = {2.0, 3.0, 3.0, 3.0, 3.0, 1.0};
+        double[] sensorWeightage = {1.5, 1.5, 3.0, 3.0, 3.0, 1.0};
 
         for (Sensor s : _sensors) {
 
@@ -2418,15 +2477,31 @@ public class Robot {
 
         if (_bExploreUnexplored) {
             int currentGrid = ConvertToIndex(currentRow, currentCol);
-//            System.out.println("unreachable: " + _unreachableGrids);
+            
+            //System.out.println("unreachable: " + _unreachableGrids);
             _unexploredGrids = getUnexploredGrids();
 //            System.out.println("unexplored: " + _unexploredGrids);
-            if (_unexploredGrids.isEmpty() && currentGrid != 0) {
+            if (_unexploredGrids.isEmpty() && currentGrid != ConvertToIndex(Constants.START_GRID_ROW, Constants.START_GRID_COL)) {
                 moveToStart();
-                //_bExploreUnexplored = false;
                 return;
-            } else if (_unexploredGrids.isEmpty() && currentGrid == 0) {
+            } else if (_unexploredGrids.isEmpty() && currentGrid == ConvertToIndex(Constants.START_GRID_ROW, Constants.START_GRID_COL)) {
                 _bExploreUnexplored = false;
+                _exploreUnexploredFlag = true;
+                return;
+            }
+            
+            if(_bExploring) {
+                exploreUnexplored();
+                if (_phyExCmdMsg != null) {
+                    System.out.println("explore Unexplored msg: " + _phyExCmdMsg);
+                    String outputMsg = _phyExCmdMsg;
+                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    String outputMsg2 = _phyExCmdMsg + "," + _phyExSimMsg;
+                    outputMsg2 = outputMsg2.substring(0, outputMsg2.length() - 1);
+                    mgr.sendMsg(outputMsg2, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _phyExCmdMsg = null;
+                    _phyExSimMsg = "";
+                }
                 return;
             }
 
@@ -2436,57 +2511,99 @@ public class Robot {
                 int reachableGrid = 0;
 
                 for (int i = 0; i < _unexploredGrids.size(); i++) {
-                    tempDist = heuristicDist(0, _unexploredGrids.get(i));
+                    tempDist = heuristicDist(ConvertToIndex(Constants.START_GRID_ROW, Constants.START_GRID_COL), _unexploredGrids.get(i));
                     if (tempDist > targetDist) {
                         targetGrid = _unexploredGrids.get(i);
                         targetDist = tempDist;
                     }
                 }
+                System.out.println("intending to explore unexplored");
+                System.out.println("target grid: "+targetGrid);
                 reachableGrid = findReachableGrid(targetGrid);
+                System.out.println("reachable grid: "+reachableGrid);
                 if (reachableGrid != 0) {
                     exploreUnexploredPath = generatePath(currentGrid, reachableGrid); //generate Path
+                    System.out.println("explorePath: "+exploreUnexploredPath);
                     if (exploreUnexploredPath == null) {
                         blockAddUnreachable(targetGrid, reachableGrid);
                     } else {
-                        if (currentGrid != 0) {
+                        if (currentGrid != ConvertToIndex(Constants.START_GRID_ROW, Constants.START_GRID_COL)) {
                             exploreUnexploredPath.add(currentGrid);
                         }
                         Collections.reverse(exploreUnexploredPath);
                         if (exploreUnexploredPath.size() >= 1) {
+                            System.out.println("Setting exploring to true.");
                             _bExploring = true;
+                            
+                            System.out.println("exploring = " +_bExploring);
                         }
                     }
                 } else if (!_unreachableGrids.contains(targetGrid)) {
                     _unreachableGrids.add(targetGrid);
-                }
-            } else {
-                exploreUnexplored();
-                if (_phyExCmdMsg != null) {
-                    String outputMsg = _phyExCmdMsg;
-                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-                    _phyExCmdMsg = null;
                 }
             }
             return;
         }
 
         if (_bReachedGoal && withinStartZone(currentRow, currentCol)) {
+            /* with exploreUnexplored */
             _unexploredGrids = getUnexploredGrids();
             if (!_unexploredGrids.isEmpty()) {
-                _bExploreUnexplored = true;
                 System.out.println("checked all unexplored: " + _bExploreUnexplored);
                 System.out.println("unexplored grids: " + _unexploredGrids);
-                if (direction != RobotConstant.DEFAULT_START_DIR) {
+                if(checkTurnLeft(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+                    rotateLeft();
+                    _phyExCmdMsg = "A";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _movesSinceLastCalibration = 0;
+                } else if (checkTurnRight(direction,RobotConstant.DEFAULT_START_SP_DIR)){
                     rotateRight();
                     _phyExCmdMsg = "D";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _movesSinceLastCalibration = 0;
+                } else if (checkTurn180(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+                    rotate180();
+                    _phyExCmdMsg = "S";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _movesSinceLastCalibration = 0;
+                } else {
+                    requestCalibration();
+                    _bExploreUnexplored = true;
+                    _exploreUnexploredFlag = true;
+                }
+//                if (direction != RobotConstant.DEFAULT_START_SP_DIR) {
+//                    rotateRight();
+//                    _phyExCmdMsg = "D";
+//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+//                    _movesSinceLastCalibration = 0;
+//                } 
+                
+            } else {
+                /* without exploreUnexplored */
+                if(checkTurnLeft(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+                    rotateLeft();
+                    _phyExCmdMsg = "A";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _movesSinceLastCalibration = 0;
+                } else if (checkTurnRight(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+                    rotateRight();
+                    _phyExCmdMsg = "D";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _movesSinceLastCalibration = 0;
+                } else if (checkTurn180(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+                    rotate180();
+                    _phyExCmdMsg = "S";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                     _movesSinceLastCalibration = 0;
                 }
-            } else {
                 _bExplorationComplete = true;
+                _exploreUnexploredFlag = false;
                 System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
                 System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
-                System.out.println("MDF String:" + _mapUI.generateMapString());
+                //System.out.println("MDF String:" + _mapUI.generateMapString());
                 _phyExCmdMsg = "Z";
+                String msgToAndroid = "Z," + _robotMap.generateMDFStringPart1() + "," + _robotMap.generateMDFStringPart2();
+                mgr.sendMsg(msgToAndroid, CommsMgr.MSG_TYPE_ANDROID, false);
             }
             if (_phyExCmdMsg != null) {
                 String outputMsg = _phyExCmdMsg;

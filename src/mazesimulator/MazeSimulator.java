@@ -367,6 +367,7 @@ public class MazeSimulator extends JPanel {
 
         btn_PhyFastest.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
+                roboCop.setMapUI(mapUI);
                 roboCop.startPhysicalShortestPath(robotMap.generateShortestPathMap());
             }
         });
