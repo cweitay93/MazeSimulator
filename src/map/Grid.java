@@ -19,6 +19,7 @@ public class Grid {
 	private int _col;				// This grid's column within the map
 	
 	private double _truthValue;		// This grid's truth value for the current status
+        private boolean _phantomGrid = false;
 	
 	/**
 	 * Default Constructor
@@ -179,13 +180,21 @@ public class Grid {
 	 * 
 	 * @param newTruthValue The proposed truth value
 	 */
+        public void setPhantomGrid(boolean obsCheck){
+            _phantomGrid = obsCheck;
+        }
+        
+        public boolean getPhantomGrid() {
+            return _phantomGrid;
+        }
+        
 	public void markAsFreeGrid(double newTruthValue) {
-		
 		if(newTruthValue >= _truthValue) {
 			_bExplored = true;
 			_bObstacle = false;
 			
 			_truthValue = newTruthValue;
+                        _phantomGrid = true;
 		}
 	}
 	
@@ -198,12 +207,12 @@ public class Grid {
 	 * @param newTruthValue The proposed truth value
 	 */
 	public void markAsObstacle(double newTruthValue) {
-		
 		if(newTruthValue >= _truthValue) {
 			_bExplored = true;
 			_bObstacle = true;
 			
 			_truthValue = newTruthValue;
+                        _phantomGrid = true;
 		}
 	}
 	

@@ -2429,6 +2429,7 @@ public class Robot {
                 if (currGrid < obstacleAtGrid) {
                     if ((gridRow >= 0 && gridRow < 20) && (gridCol >= 0 && gridCol < 15)) {
                         robotMapGrids[gridRow][gridCol].markAsFreeGrid(truthValue);
+                        robotMapGrids[gridRow][gridCol].setPhantomGrid(false);
 //                        robotMapGrids[gridRow][gridCol].setExplored(true);
 //                        if ((sensorIndex == 0 || (sensorIndex > 1 && sensorIndex < 5)) && robotMapGrids[gridRow][gridCol].isObstacle()) {
 //                            robotMapGrids[gridRow][gridCol].setObstacle(false);
@@ -2450,7 +2451,11 @@ public class Robot {
                         if ((gridRow >= 0 && gridRow < 20) && (gridCol >= 0 && gridCol < 15)) {
                             if (!robotMapGrids[gridRow][gridCol].isObstacle()) {
                                 robotMapGrids[gridRow][gridCol].markAsObstacle(truthValue);
-                                _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
+                                if(robotMapGrids[gridRow][gridCol].getPhantomGrid()){
+                                    robotMapGrids[gridRow][gridCol].setPhantomGrid(false);
+                                    _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
+                                }
+//                                _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
                             }
                         }
                     }
