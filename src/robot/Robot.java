@@ -1670,7 +1670,8 @@ public class Robot {
 //        System.out.println("In sendSerialMovement---");
         System.out.println("moveOffRotation: " + moveOffRotation);
         System.out.println("Real direction: " + direction);
-        DIRECTION tempDir = DIRECTION.EAST;
+        movementArrayList += "C";
+        DIRECTION tempDir = DIRECTION.NORTH;
         while (moveOffRotation != tempDir) {
             tempDir = true ? DIRECTION.getNext(tempDir)
                 : DIRECTION.getPrevious(tempDir);
@@ -1680,7 +1681,6 @@ public class Robot {
             movementArrayList += "D";
         }
         
-        movementArrayList += "C";
 
         for (int i = 1; i < shortestPathResult.size(); i++) {
             int diff = previous - shortestPathResult.get(i);
@@ -1723,8 +1723,9 @@ public class Robot {
         ArrayList<DIRECTION> possibleDirection = new ArrayList<DIRECTION>();
         ArrayList<ArrayList<Integer>> possibleFastestPath = new ArrayList<ArrayList<Integer>>();
         ArrayList<Integer> compareRotation = new ArrayList<Integer>();
-        int lowestNumOfRotate = -1;
+        int lowestNumOfRotate = 9999;
         int lowestNumOfRotateIndex = 0;
+        ArrayList<Integer> numOflowest = new ArrayList<Integer>();
         String callforFun = "";
 
         neighbour = currentNeighbour(start, direction, mapBit);
@@ -1732,6 +1733,8 @@ public class Robot {
 
         for (int i = 0; i < neighbour.size(); i++) {
             possibleDirection.add(directionIndicator(start, neighbour.get(i), direction));
+            if(possibleDirection.get(i) != direction)
+                totalRotation+=1;
             System.out.println("possibleDirection: " + possibleDirection.get(i));
             possibleFastestPath.add(aStarSearch(start, goal, mapBit, possibleDirection.get(i)));
             Collections.reverse(possibleFastestPath.get(i));
@@ -1745,8 +1748,34 @@ public class Robot {
             if (lowestNumOfRotate >= compareRotation.get(i)) {
                 lowestNumOfRotate = compareRotation.get(i);
                 lowestNumOfRotateIndex = i;
+//                numOflowest.add(lowestNumOfRotateIndex);
             }
         }
+        System.out.println("Result rot: " + compareRotation.get(lowestNumOfRotateIndex));
+        for(int i = 0; i < compareRotation.size(); i++){
+            if(compareRotation.get(lowestNumOfRotateIndex) == compareRotation.get(i)){
+                numOflowest.add(i);
+            }
+        }
+        System.out.println("CCCCCCCpossibleDirection: " + possibleDirection);
+        System.out.println("numOflowest: " + numOflowest);
+        for(int i = 0; i < numOflowest.size(); i++){
+                System.out.println("BBBBBBpossibleDirection.get(i): " + possibleDirection.get(numOflowest.get(i)));
+                System.out.println("BBBBBBdirection: " + direction);
+            if(possibleDirection.get(numOflowest.get(i)) == direction){
+                System.out.println("AAAAAApossibleDirection.get(i): " + possibleDirection.get(numOflowest.get(i)));
+                System.out.println("AAAAAAdirection: " + direction);
+                
+                System.out.println("LOWEST " + compareRotation.get(lowestNumOfRotateIndex));
+                Collections.reverse(possibleFastestPath.get(numOflowest.get(i)));
+                System.out.println(possibleFastestPath.get(numOflowest.get(i)));
+                return possibleFastestPath.get(numOflowest.get(i));
+            }            
+        }
+        System.out.println("AAAAAApossibleDirection.get(i): " + possibleDirection.get(lowestNumOfRotateIndex));
+        System.out.println("AAAAAAdirection: " + direction);
+                
+        System.out.println("I didnt go in if");
         System.out.println("LOWEST " + compareRotation.get(lowestNumOfRotateIndex));
         Collections.reverse(possibleFastestPath.get(lowestNumOfRotateIndex));
         System.out.println(possibleFastestPath.get(lowestNumOfRotateIndex));
@@ -1859,6 +1888,8 @@ public class Robot {
             Collections.reverse(shortestPath);
         } else {
             shortestPath1 = FastestPath(start, mid, mapBit, aDirection);
+            System.out.println("1st: " + direction);
+            System.out.println("2nd: " + midDirection);
             shortestPath2 = FastestPath(mid, end, mapBit, midDirection);
 
             shortestPath.addAll(shortestPath2);                                                                 //concatenate of 2 Arraylist
@@ -2318,6 +2349,7 @@ public class Robot {
                     }
                         String fPathMsg =  sendSerialMovement(shortestPath); //"WWWWDWWWWWWWWWWWWDWWWWAWWWWWZb";
                         mgr.sendMsg(fPathMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        mgr.sendMsg(fPathMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                         simulateShortestPath(shortestPath);
                     
 //                    if (_phySpTimer != null) {
@@ -2600,15 +2632,16 @@ public class Robot {
                     _phyExCmdMsg = "S";
                     mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                     _movesSinceLastCalibration = 0;
+                } else{
+                    _bExplorationComplete = true;
+                    _exploreUnexploredFlag = false;
+                    System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
+                    System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
+                    //System.out.println("MDF String:" + _mapUI.generateMapString());
+                    _phyExCmdMsg = "Z";
+                    String msgToAndroid = "Z," + _robotMap.generateMDFStringPart1() + "," + _robotMap.generateMDFStringPart2();
+                    mgr.sendMsg(msgToAndroid, CommsMgr.MSG_TYPE_ANDROID, false);
                 }
-                _bExplorationComplete = true;
-                _exploreUnexploredFlag = false;
-                System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
-                System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
-                //System.out.println("MDF String:" + _mapUI.generateMapString());
-                _phyExCmdMsg = "Z";
-                String msgToAndroid = "Z," + _robotMap.generateMDFStringPart1() + "," + _robotMap.generateMDFStringPart2();
-                mgr.sendMsg(msgToAndroid, CommsMgr.MSG_TYPE_ANDROID, false);
             }
             if (_phyExCmdMsg != null) {
                 String outputMsg = _phyExCmdMsg;
