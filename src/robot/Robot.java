@@ -99,13 +99,17 @@ public class Robot {
 
     private DIRECTION midDirection;
     int j = 0;
-    //int k = 0;
     int startCalibration = 1;
     int validateCount = 0;
     int totalRotation = 0;
     int forwardCount = 0;
+    private boolean needCalibration = false;
     private boolean isStairs = false;
-    int stepCount = 0;
+    int stairsCount = 0;
+    int stairsMove = 0;
+    private boolean stairsTurnRight = false;
+    private boolean stairsTurnLeft = false;
+    
 
     private ArrayList<Integer> _unexploredGrids = null;
     private ArrayList<Integer> _unreachableGrids = new ArrayList<Integer>();
@@ -503,6 +507,63 @@ public class Robot {
         boolean frontWall = isFrontWall();
         boolean leftWall = isLeftWall();
         boolean rightWall = isRightWall();
+        
+        if(!isStairs){
+            checkStairs(currentRow, currentCol);
+            //System.out.println("stairs count: " + stairsCount);
+        }
+        if(isStairs) {
+            if(stairsTurnRight == false){
+                rotateRight();
+                stairsTurnRight = true;
+                return;
+            }
+            
+            if (!frontWall && stairsTurnLeft == false) {
+                if (stairsMove < stairsCount) {
+                    moveForward();
+                    stairsMove++;
+                    return;
+                } else {
+                    rotateLeft();
+                    stairsTurnLeft = true;
+                    stairsMove = 0;
+                    return;
+                }
+            } else {
+                if(stairsTurnLeft == false){
+                    rotateLeft();
+                    stairsTurnLeft = true;
+                    stairsMove = 0;
+                    return;
+                }
+                
+                if (!frontWall && stairsTurnLeft == true) {
+                    if (stairsMove < stairsCount) {
+                        moveForward();
+                        stairsMove++;
+                    } else {
+                        isStairs = false;
+                        stairsTurnRight = false;
+                        stairsTurnLeft = false;
+                        stairsCount = 0;
+                        stairsMove = 0;
+                        if(frontWall && !leftWall && rightWall)
+                            rotate180();
+                    }
+                    return;
+                } else {
+                    isStairs = false;
+                    stairsTurnRight = false;
+                    stairsTurnLeft = false;
+                    stairsCount = 0;
+                    stairsMove = 0;
+                    if(frontWall && !leftWall && rightWall)
+                        rotate180();
+                }
+                return;
+            }
+        }
 
         // (No leftWall AND previousLeftWall) OR (frontWall AND No leftWall AND rightWall)
         if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
@@ -1102,62 +1163,62 @@ public class Robot {
     }
 
     public boolean isRightWall() {
-        int leftWallX, leftWallY;
+        int rightWallX, rightWallY;
 
         Grid[][] _grids = _robotMap.getMapGrids();
 
         switch (direction) {
             case NORTH:
-                leftWallX = currentCol + RobotConstant.ROBOT_SIZE;
-                leftWallY = currentRow;
+                rightWallX = currentCol + RobotConstant.ROBOT_SIZE;
+                rightWallY = currentRow;
 
-                if (leftWallX > 14) {
+                if (rightWallX > 14) {
                     return true;
-                } else if (leftWallY >= 0) {
-                    for (int i = leftWallY; i < leftWallY + RobotConstant.ROBOT_SIZE; i++) {
-                        if (_grids[i][leftWallX].isExplored() && _grids[i][leftWallX].isObstacle()) {
+                } else if (rightWallY >= 0) {
+                    for (int i = rightWallY; i < rightWallY + RobotConstant.ROBOT_SIZE; i++) {
+                        if (_grids[i][rightWallX].isExplored() && _grids[i][rightWallX].isObstacle()) {
                             return true;
                         }
                     }
                     return false;
                 }
             case EAST:
-                leftWallX = currentCol;
-                leftWallY = currentRow + RobotConstant.ROBOT_SIZE;
+                rightWallX = currentCol;
+                rightWallY = currentRow + RobotConstant.ROBOT_SIZE;
 
-                if (leftWallY > 19) {
+                if (rightWallY > 19) {
                     return true;
-                } else if (leftWallY >= 0) {
-                    for (int i = leftWallX; i < leftWallX + RobotConstant.ROBOT_SIZE; i++) {
-                        if (_grids[leftWallY][i].isExplored() && _grids[leftWallY][i].isObstacle()) {
+                } else if (rightWallY >= 0) {
+                    for (int i = rightWallX; i < rightWallX + RobotConstant.ROBOT_SIZE; i++) {
+                        if (_grids[rightWallY][i].isExplored() && _grids[rightWallY][i].isObstacle()) {
                             return true;
                         }
                     }
                     return false;
                 }
             case WEST:
-                leftWallX = currentCol;
-                leftWallY = currentRow - 1;
+                rightWallX = currentCol;
+                rightWallY = currentRow - 1;
 
-                if (leftWallY < 0) {
+                if (rightWallY < 0) {
                     return true;
-                } else if (leftWallY >= 0) {
-                    for (int i = leftWallX; i < leftWallX + RobotConstant.ROBOT_SIZE; i++) {
-                        if (_grids[leftWallY][i].isExplored() && _grids[leftWallY][i].isObstacle()) {
+                } else if (rightWallY >= 0) {
+                    for (int i = rightWallX; i < rightWallX + RobotConstant.ROBOT_SIZE; i++) {
+                        if (_grids[rightWallY][i].isExplored() && _grids[rightWallY][i].isObstacle()) {
                             return true;
                         }
                     }
                     return false;
                 }
             case SOUTH:
-                leftWallX = currentCol - 1;
-                leftWallY = currentRow;
+                rightWallX = currentCol - 1;
+                rightWallY = currentRow;
 
-                if (leftWallX < 0) {
+                if (rightWallX < 0) {
                     return true;
-                } else if (leftWallY >= 0) {
-                    for (int i = leftWallY; i < leftWallY + RobotConstant.ROBOT_SIZE; i++) {
-                        if (_grids[i][leftWallX].isExplored() && _grids[i][leftWallX].isObstacle()) {
+                } else if (rightWallY >= 0) {
+                    for (int i = rightWallY; i < rightWallY + RobotConstant.ROBOT_SIZE; i++) {
+                        if (_grids[i][rightWallX].isExplored() && _grids[i][rightWallX].isObstacle()) {
                             return true;
                         }
                     }
@@ -1670,7 +1731,7 @@ public class Robot {
 //        System.out.println("In sendSerialMovement---");
         System.out.println("moveOffRotation: " + moveOffRotation);
         System.out.println("Real direction: " + direction);
-        movementArrayList += "C";
+        //movementArrayList += "C";
         DIRECTION tempDir = DIRECTION.NORTH;
         while (moveOffRotation != tempDir) {
             tempDir = true ? DIRECTION.getNext(tempDir)
@@ -1850,7 +1911,7 @@ public class Robot {
                     cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
                     cameFrom[neighbour.get(i)] = currentIndex;
                     gScore[neighbour.get(i)] = gScoreTemp;
-                    fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal) + 10;
+                    fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal) + 50;
                 }
             }
         }
@@ -2379,15 +2440,15 @@ public class Robot {
         // Try to get message
         _phyExRcvMsg = mgr.recvMsg();
 
-        if (_phyExRcvMsg != null || _exploreUnexploredFlag == true) {
+        if (_phyExRcvMsg != null /*|| _exploreUnexploredFlag == true*/) {
             System.out.println("arduino msg: " + _phyExRcvMsg);
             if (_phyExRcvMsg != null && (_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("c")
-                    || _phyExRcvMsg.contains("q") || _phyExRcvMsg.contains("t") || _phyExRcvMsg.contains("x"))) {
+                    )) {
                 requestSensorReadings();
                 validateCount++;
                 return;
-            } else if ((_phyExRcvMsg == null && _exploreUnexploredFlag == true) || _phyExRcvMsg.length() > 3) {
-                if (validateCount >= 1 || _exploreUnexploredFlag == true) {
+            } else if (/*(_phyExRcvMsg == null && _exploreUnexploredFlag == true) ||*/ _phyExRcvMsg.length() > 3) {
+                if (validateCount >= 1 /*|| _exploreUnexploredFlag == true*/) {
                     // Sense its surroundings using actual sensor readings
                     if(_phyExRcvMsg != null)
                         this.physicalSense(_phyExRcvMsg);
@@ -2502,9 +2563,9 @@ public class Robot {
 
         if (_movesSinceLastCalibration >= MAX_MOVES_BEFORE_CALIBRATION) {
             if (isLeftWall()) {
-                requestCalibration();
+                //requestCalibration();
                 _movesSinceLastCalibration = 0;
-                return;
+                //return;
             }
         }
         // Robot reached goal zone
@@ -2584,30 +2645,30 @@ public class Robot {
 
         if (_bReachedGoal && withinStartZone(currentRow, currentCol)) {
             /* with exploreUnexplored */
-            _unexploredGrids = getUnexploredGrids();
-            if (!_unexploredGrids.isEmpty()) {
-                System.out.println("checked all unexplored: " + _bExploreUnexplored);
-                System.out.println("unexplored grids: " + _unexploredGrids);
-                if(checkTurnLeft(direction,RobotConstant.DEFAULT_START_SP_DIR)){
-                    rotateLeft();
-                    _phyExCmdMsg = "A";
-                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-                    _movesSinceLastCalibration = 0;
-                } else if (checkTurnRight(direction,RobotConstant.DEFAULT_START_SP_DIR)){
-                    rotateRight();
-                    _phyExCmdMsg = "D";
-                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-                    _movesSinceLastCalibration = 0;
-                } else if (checkTurn180(direction,RobotConstant.DEFAULT_START_SP_DIR)){
-                    rotate180();
-                    _phyExCmdMsg = "S";
-                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-                    _movesSinceLastCalibration = 0;
-                } else {
-                    requestCalibration();
-                    _bExploreUnexplored = true;
-                    _exploreUnexploredFlag = true;
-                }
+//            _unexploredGrids = getUnexploredGrids();
+//            if (!_unexploredGrids.isEmpty()) {
+//                System.out.println("checked all unexplored: " + _bExploreUnexplored);
+//                System.out.println("unexplored grids: " + _unexploredGrids);
+//                if(checkTurnLeft(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+//                    rotateLeft();
+//                    _phyExCmdMsg = "A";
+//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+//                    _movesSinceLastCalibration = 0;
+//                } else if (checkTurnRight(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+//                    rotateRight();
+//                    _phyExCmdMsg = "D";
+//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+//                    _movesSinceLastCalibration = 0;
+//                } else if (checkTurn180(direction,RobotConstant.DEFAULT_START_SP_DIR)){
+//                    rotate180();
+//                    _phyExCmdMsg = "S";
+//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+//                    _movesSinceLastCalibration = 0;
+//                } else {
+//                    requestCalibration();
+//                    _bExploreUnexplored = true;
+//                    _exploreUnexploredFlag = true;
+//                }
 //                if (direction != RobotConstant.DEFAULT_START_SP_DIR) {
 //                    rotateRight();
 //                    _phyExCmdMsg = "D";
@@ -2615,26 +2676,33 @@ public class Robot {
 //                    _movesSinceLastCalibration = 0;
 //                } 
                 
-            } else {
+//            } else {
                 /* without exploreUnexplored */
                 if(checkTurnLeft(direction,RobotConstant.DEFAULT_START_SP_DIR)){
                     rotateLeft();
                     _phyExCmdMsg = "A";
                     mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                     _movesSinceLastCalibration = 0;
+                    needCalibration = true;
                 } else if (checkTurnRight(direction,RobotConstant.DEFAULT_START_SP_DIR)){
                     rotateRight();
                     _phyExCmdMsg = "D";
                     mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                     _movesSinceLastCalibration = 0;
+                    needCalibration = true;
                 } else if (checkTurn180(direction,RobotConstant.DEFAULT_START_SP_DIR)){
                     rotate180();
                     _phyExCmdMsg = "S";
                     mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ANDROID, false);
                     _movesSinceLastCalibration = 0;
+                    needCalibration = true;
+                } else if(needCalibration){
+                    _phyExCmdMsg = "C";
+                    _movesSinceLastCalibration = 0;
+                    needCalibration = false;
                 } else{
                     _bExplorationComplete = true;
-                    _exploreUnexploredFlag = false;
+                    //_exploreUnexploredFlag = false;
                     System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
                     System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
                     //System.out.println("MDF String:" + _mapUI.generateMapString());
@@ -2642,7 +2710,7 @@ public class Robot {
                     String msgToAndroid = "Z," + _robotMap.generateMDFStringPart1() + "," + _robotMap.generateMDFStringPart2();
                     mgr.sendMsg(msgToAndroid, CommsMgr.MSG_TYPE_ANDROID, false);
                 }
-            }
+//            }
             if (_phyExCmdMsg != null) {
                 String outputMsg = _phyExCmdMsg;
                 mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
@@ -2708,6 +2776,98 @@ public class Robot {
 
     private void requestCalibration() {
         mgr.sendMsg("C", CommsMgr.MSG_TYPE_ARDUINO, false);
+    }
+    
+    public void checkStairs(int currentRow, int currentCol){
+	int tempRow, tempCol;
+	Grid[][] _grids = _robotMap.getMapGrids();
+
+        switch (direction) {
+            case NORTH:
+                for(int i = 0; i < 3; i++){
+                    for(int k = i; k < 3; k++){
+                        tempRow = (currentRow - 1) - i;
+                        tempCol = currentCol + k;
+                        if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                            if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount += 1;
+                            } else if (_grids[tempRow][tempCol].isObstacle()){
+                                stairsCount = 0;
+                                break;
+                            }
+                        } else {
+                            stairsCount = 0;
+                        }
+                    }
+                }
+                break;
+            case EAST:
+                for (int i = 0; i < 3; i++) {
+                    for (int k = i; k < 3; k++) {
+                        tempRow = currentRow + k;
+                        tempCol = (currentCol + RobotConstant.ROBOT_SIZE) + i;
+                        if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                            if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount += 1;
+                            } else if (_grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount = 0;
+                                break;
+                            }
+                        } else {
+                            stairsCount = 0;
+                        }
+                    }
+                }
+                break;
+                
+            case SOUTH:
+                for (int i = 0; i < 3; i++) {
+                    for (int k = i; k < 3; k++) {
+                        tempRow = (currentRow + RobotConstant.ROBOT_SIZE) + i;
+                        tempCol = (currentCol + 2) - k;
+                        if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                            if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount += 1;
+                            }
+                            if (_grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount = 0;
+                                break;
+                            }
+                        } else {
+                            stairsCount = 0;
+                        }
+                    }
+                }
+                break;
+                
+            case WEST:
+                for (int i = 0; i < 3; i++) {
+                    for (int k = i; k < 3; k++) {
+                        tempRow = (currentRow + 2) - k;
+                        tempCol = (currentCol - 1) - i;
+                        if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                            if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount += 1;
+                            } else if (_grids[tempRow][tempCol].isObstacle()) {
+                                stairsCount = 0;
+                                break;
+                            }
+                        } else {
+                            stairsCount = 0;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+
+        if (stairsCount >= 2) {
+            isStairs = true;
+            System.out.println("its true");
+        } else {
+            stairsCount = 0;
+        }
     }
 
 }

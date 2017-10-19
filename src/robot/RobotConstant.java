@@ -75,7 +75,7 @@ public final class RobotConstant {
         public static final DIRECTION DEFAULT_START_SP_DIR = DIRECTION.NORTH;
 	
 	// Robot Exploration Configuration
-	public static final int DEFAULT_STEPS_PER_SECOND = 10;
+	public static final int DEFAULT_STEPS_PER_SECOND = 25;
 	public static final int DEFAULT_COVERAGE_LIMIT = 50;
 	public static final int DEFAULT_TIME_LIMIT = 360;
 	
