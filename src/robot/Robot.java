@@ -486,6 +486,9 @@ public class Robot {
                     rotateRight();
                 }
             } else {
+                while (direction != RobotConstant.DEFAULT_START_DIR) {
+                    rotateRight();
+                }
                 _bExplorationComplete = true;
                 System.out.println("MDF String part 1:" + _robotMap.generateMDFStringPart1());
                 System.out.println("MDF String part 2:" + _robotMap.generateMDFStringPart2());
@@ -510,7 +513,6 @@ public class Robot {
         
         if(!isStairs){
             checkStairs(currentRow, currentCol);
-            //System.out.println("stairs count: " + stairsCount);
         }
         if(isStairs) {
             if(stairsTurnRight == false){
@@ -525,13 +527,48 @@ public class Robot {
                     stairsMove++;
                     return;
                 } else {
+                    if(leftWall){
+                        isStairs = false;
+                        stairsTurnRight = false;
+                        stairsTurnLeft = false;
+                        stairsCount = 0;
+                        stairsMove = 0;
+                        if(frontWall && rightWall)
+                            rotate180();
+                        else if(leftWall && !frontWall)
+                            moveForward();
+                        else rotateRight();
+                        return;
+                    }
                     rotateLeft();
                     stairsTurnLeft = true;
                     stairsMove = 0;
                     return;
                 }
             } else {
+                if(frontWall && stairsMove == 0){
+                    rotateRight();
+                    isStairs = false;
+                    stairsTurnRight = false;
+                    stairsTurnLeft = false;
+                    stairsCount = 0;
+                    stairsMove = 0;
+                    return;
+                }
                 if(stairsTurnLeft == false){
+                    if(leftWall){
+                        isStairs = false;
+                        stairsTurnRight = false;
+                        stairsTurnLeft = false;
+                        stairsCount = 0;
+                        stairsMove = 0;
+                        if(frontWall && rightWall)
+                            rotate180();
+                        else if(leftWall && !frontWall)
+                            moveForward();
+                        else rotateRight();
+                        return;
+                    }
                     rotateLeft();
                     stairsTurnLeft = true;
                     stairsMove = 0;
@@ -548,8 +585,11 @@ public class Robot {
                         stairsTurnLeft = false;
                         stairsCount = 0;
                         stairsMove = 0;
-                        if(frontWall && !leftWall && rightWall)
+                        if(frontWall && rightWall)
                             rotate180();
+                        else if(leftWall && !frontWall)
+                            moveForward();
+                        else rotateRight();
                     }
                     return;
                 } else {
@@ -558,8 +598,11 @@ public class Robot {
                     stairsTurnLeft = false;
                     stairsCount = 0;
                     stairsMove = 0;
-                    if(frontWall && !leftWall && rightWall)
+                    if(frontWall && rightWall)
                         rotate180();
+                    else if(leftWall && !frontWall)
+                        moveForward();
+                    else rotateRight();
                 }
                 return;
             }
@@ -2526,6 +2569,9 @@ public class Robot {
 //                        robotMapGrids[gridRow][gridCol].setExplored(true);
 //                        if ((sensorIndex == 0 || (sensorIndex > 1 && sensorIndex < 5)) && robotMapGrids[gridRow][gridCol].isObstacle()) {
 //                            robotMapGrids[gridRow][gridCol].setObstacle(false);
+                        if(!robotMapGrids[gridRow][gridCol].isExplored()) {
+                            _phyExSimMsg += ((gridRow * 15) + gridCol) + "e,";
+                        }
                         if (!robotMapGrids[gridRow][gridCol].isObstacle()) {
                             _phyExSimMsg += ((gridRow * 15) + gridCol) + "f,";
                         }
@@ -2781,6 +2827,12 @@ public class Robot {
     public void checkStairs(int currentRow, int currentCol){
 	int tempRow, tempCol;
 	Grid[][] _grids = _robotMap.getMapGrids();
+        
+        if ((!isLeftWall() && _bPreviousLeftWall) || (isFrontWall() && !isLeftWall() && isRightWall()) || !isFrontWall()) {
+            isStairs = false;
+            stairsCount = 0;
+            return;
+        }
 
         switch (direction) {
             case NORTH:
@@ -2791,9 +2843,10 @@ public class Robot {
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
                             if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount += 1;
-                            } else if (_grids[tempRow][tempCol].isObstacle()){
+                            }
+                            if ((i != k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount = 0;
-                                break;
+                                return;
                             }
                         } else {
                             stairsCount = 0;
@@ -2809,9 +2862,10 @@ public class Robot {
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
                             if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount += 1;
-                            } else if (_grids[tempRow][tempCol].isObstacle()) {
+                            }
+                            if ((i != k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount = 0;
-                                break;
+                                return;
                             }
                         } else {
                             stairsCount = 0;
@@ -2829,9 +2883,9 @@ public class Robot {
                             if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount += 1;
                             }
-                            if (_grids[tempRow][tempCol].isObstacle()) {
+                            if ((i != k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount = 0;
-                                break;
+                                return;
                             }
                         } else {
                             stairsCount = 0;
@@ -2848,9 +2902,10 @@ public class Robot {
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
                             if ((i == k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount += 1;
-                            } else if (_grids[tempRow][tempCol].isObstacle()) {
+                            }
+                            if ((i != k) && _grids[tempRow][tempCol].isObstacle()) {
                                 stairsCount = 0;
-                                break;
+                                return;
                             }
                         } else {
                             stairsCount = 0;
@@ -2863,8 +2918,15 @@ public class Robot {
         }
 
         if (stairsCount >= 2) {
-            isStairs = true;
-            System.out.println("its true");
+//            if ((!isLeftWall() && _bPreviousLeftWall) || (isFrontWall() && !isLeftWall() && isRightWall()) || !isFrontWall()) {
+//                isStairs = false;
+//                stairsCount = 0;
+//            }
+//            else {
+                isStairs = true;
+                System.out.println("its true");
+//            }
+            
         } else {
             stairsCount = 0;
         }
