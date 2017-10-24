@@ -101,7 +101,6 @@ public class Robot {
     int j = 0;
     int startCalibration = 1;
     int validateCount = 0;
-    int totalRotation = 0;
     int forwardCount = 0;
     private boolean needCalibration = false;
     private boolean isStairs = false;
@@ -254,7 +253,6 @@ public class Robot {
 
         j = 0;
         validateCount = 0;
-        totalRotation = 0;
         startCalibration = 1;
 
     }
@@ -379,7 +377,7 @@ public class Robot {
                     mapBit[h] = Integer.parseInt(bitString.substring(h, h + 1));                                      //String to Int Conversion
                 }
 
-                shortestPath = aStarSearch(currentGrid, startingGrid, mapBit, direction);
+                shortestPath = aStarSearch(currentGrid, startingGrid, mapBit, direction, true);
                 shortestPath.add(currentGrid);
                 Collections.reverse(shortestPath);
                 System.out.println("Shortest Path" + shortestPath);
@@ -414,7 +412,7 @@ public class Robot {
                     mapBit[h] = Integer.parseInt(bitString.substring(h, h + 1));                                      //String to Int Conversion
                 }
 
-                shortestPath = aStarSearch(currentGrid, startingGrid, mapBit, direction);
+                shortestPath = aStarSearch(currentGrid, startingGrid, mapBit, direction, true);
                 shortestPath.add(currentGrid);
                 Collections.reverse(shortestPath);
                 System.out.println("Shortest Path" + shortestPath);
@@ -699,7 +697,7 @@ public class Robot {
             mapBit[h] = Integer.parseInt(mapString.substring(h, h + 1));                                      //String to Int Conversion
         }
 
-        return aStarSearch(current, reachable, mapBit, direction);
+        return aStarSearch(current, reachable, mapBit, direction, true);
     }
 
     public void moveToStart() {
@@ -723,7 +721,7 @@ public class Robot {
                 mapBit[h] = Integer.parseInt(mapString.substring(h, h + 1));                                      //String to Int Conversion
             }
 
-            exploreUnexploredPath = aStarSearch(currentGrid, startGrid, mapBit, direction); //generate Path
+            exploreUnexploredPath = aStarSearch(currentGrid, startGrid, mapBit, direction, true); //generate Path
             exploreUnexploredPath.add(currentGrid);
             Collections.reverse(exploreUnexploredPath);
             movingToStart = true;
@@ -1764,6 +1762,35 @@ public class Robot {
         stepsArrayList.add(Integer.toString(counter));
         return stepsArrayList;
     }
+    
+     public int rotationCount(ArrayList<Integer> shortestPathResult) {
+        int previous = shortestPathResult.get(0);
+        int previousDiff = shortestPathResult.get(0) - shortestPathResult.get(1);
+        int rotation = 0; 
+        DIRECTION moveOffRotation = directionIndicator(shortestPathResult.get(0), shortestPathResult.get(1), direction);
+        
+        DIRECTION tempDir = DIRECTION.NORTH;
+        while (moveOffRotation != tempDir) {
+            tempDir = true ? DIRECTION.getNext(tempDir)
+                : DIRECTION.getPrevious(tempDir);
+            rotation++;
+        }
+        for (int i = 1; i < shortestPathResult.size(); i++) {
+            int diff = previous - shortestPathResult.get(i);
+            previous = shortestPathResult.get(i);
+            if (diff == previousDiff) {
+                previousDiff = diff;
+            } else {
+                if(Math.abs(previousDiff) == Math.abs(diff)) {
+                    System.out.println("previousDiff: " + previousDiff + " diff: " + diff);
+                    rotation++;
+                }
+                rotation++;
+                previousDiff = diff;
+            }
+        }
+        return rotation;
+    }
 
     public String sendSerialMovement(ArrayList<Integer> shortestPathResult) {
         int previous = shortestPathResult.get(0);
@@ -1771,17 +1798,13 @@ public class Robot {
         String movementArrayList = "";
         DIRECTION moveOffRotation = directionIndicator(shortestPathResult.get(0), shortestPathResult.get(1), direction);
 
-//        System.out.println("In sendSerialMovement---");
         System.out.println("moveOffRotation: " + moveOffRotation);
         System.out.println("Real direction: " + direction);
-        //movementArrayList += "C";
+        
         DIRECTION tempDir = DIRECTION.NORTH;
         while (moveOffRotation != tempDir) {
             tempDir = true ? DIRECTION.getNext(tempDir)
                 : DIRECTION.getPrevious(tempDir);
-//            System.out.println("Turning.. Now direction is " + direction);
-            //System.out.println("Toh");
-            //rotateRight();
             movementArrayList += "D";
         }
         
@@ -1811,9 +1834,7 @@ public class Robot {
                     movementArrayList += "A";
                 } else {
                     movementArrayList += "S";
-                    totalRotation++;
                 }
-                totalRotation++;
                 movementArrayList += "W";
                 previousDiff = diff;
             }
@@ -1830,63 +1851,66 @@ public class Robot {
         int lowestNumOfRotate = 9999;
         int lowestNumOfRotateIndex = 0;
         ArrayList<Integer> numOflowest = new ArrayList<Integer>();
-        String callforFun = "";
+        int rotation = 0;
 
         neighbour = currentNeighbour(start, direction, mapBit);
         System.out.println("The Neighbour: " + neighbour);
 
         for (int i = 0; i < neighbour.size(); i++) {
             possibleDirection.add(directionIndicator(start, neighbour.get(i), direction));
-            if(possibleDirection.get(i) != direction)
-                totalRotation+=1;
             System.out.println("possibleDirection: " + possibleDirection.get(i));
-            possibleFastestPath.add(aStarSearch(start, goal, mapBit, possibleDirection.get(i)));
+            possibleFastestPath.add(aStarSearch(start, goal, mapBit, possibleDirection.get(i), true));
             Collections.reverse(possibleFastestPath.get(i));
             System.out.println("Path: for " + i + " is " + possibleFastestPath.get(i));
-            callforFun = sendSerialMovement(possibleFastestPath.get(i));
-            compareRotation.add(totalRotation);
-            totalRotation = 0;
+            rotation += rotationCount(possibleFastestPath.get(i));
+            compareRotation.add(rotation);
+            rotation = 0;
             System.out.println("Rotation: " + compareRotation.get(i));
         }
+        
+        for (int i = neighbour.size(); i < (neighbour.size() * 2); i++) {
+            possibleDirection.add(directionIndicator(start, neighbour.get(i-neighbour.size()), direction));
+            System.out.println("possibleDirection: " + possibleDirection.get(i));
+            possibleFastestPath.add(aStarSearch(start, goal, mapBit, possibleDirection.get(i), false));
+            Collections.reverse(possibleFastestPath.get(i));
+            System.out.println("Path: for " + i + " is " + possibleFastestPath.get(i));
+            rotation += rotationCount(possibleFastestPath.get(i));
+            compareRotation.add(rotation);
+            rotation = 0;
+            System.out.println("Rotation: " + compareRotation.get(i));
+        }
+        
         for (int i = 0; i < compareRotation.size(); i++) {
             if (lowestNumOfRotate >= compareRotation.get(i)) {
                 lowestNumOfRotate = compareRotation.get(i);
                 lowestNumOfRotateIndex = i;
-//                numOflowest.add(lowestNumOfRotateIndex);
             }
         }
-        System.out.println("Result rot: " + compareRotation.get(lowestNumOfRotateIndex));
+        System.out.println("Result rotatation: " + compareRotation.get(lowestNumOfRotateIndex));
         for(int i = 0; i < compareRotation.size(); i++){
             if(compareRotation.get(lowestNumOfRotateIndex) == compareRotation.get(i)){
                 numOflowest.add(i);
             }
         }
-        System.out.println("CCCCCCCpossibleDirection: " + possibleDirection);
         System.out.println("numOflowest: " + numOflowest);
         for(int i = 0; i < numOflowest.size(); i++){
-                System.out.println("BBBBBBpossibleDirection.get(i): " + possibleDirection.get(numOflowest.get(i)));
-                System.out.println("BBBBBBdirection: " + direction);
-            if(possibleDirection.get(numOflowest.get(i)) == direction){
-                System.out.println("AAAAAApossibleDirection.get(i): " + possibleDirection.get(numOflowest.get(i)));
-                System.out.println("AAAAAAdirection: " + direction);
-                
-                System.out.println("LOWEST " + compareRotation.get(lowestNumOfRotateIndex));
+
+            if(possibleDirection.get(numOflowest.get(i)) == direction){         
+                System.out.println("LOWEST(if) " + compareRotation.get(lowestNumOfRotateIndex));
                 Collections.reverse(possibleFastestPath.get(numOflowest.get(i)));
                 System.out.println(possibleFastestPath.get(numOflowest.get(i)));
                 return possibleFastestPath.get(numOflowest.get(i));
             }            
-        }
-        System.out.println("AAAAAApossibleDirection.get(i): " + possibleDirection.get(lowestNumOfRotateIndex));
-        System.out.println("AAAAAAdirection: " + direction);
-                
-        System.out.println("I didnt go in if");
-        System.out.println("LOWEST " + compareRotation.get(lowestNumOfRotateIndex));
+        }         
+        System.out.println("Skip if condition");
+        System.out.println("LOWEST(~if) " + compareRotation.get(lowestNumOfRotateIndex));
         Collections.reverse(possibleFastestPath.get(lowestNumOfRotateIndex));
         System.out.println(possibleFastestPath.get(lowestNumOfRotateIndex));
         return possibleFastestPath.get(lowestNumOfRotateIndex);
     }
 
-    public ArrayList<Integer> aStarSearch(int start, int goal, int[] mapBit, DIRECTION adirection) {                        //Function of A* search algorithm
+    public ArrayList<Integer> aStarSearch(int start, int goal, int[] mapBit, DIRECTION adirection, boolean rotateFlag) {                        //Function of A* search algorithm
+        boolean rotate = rotateFlag;
         boolean closedSet[] = new boolean[300];                                                             //The set of nodes already evaluated
         ArrayList<Integer> openSet = new ArrayList();                                                       //The set of currently discovered nodes that are not evaluated yet
         int cameFrom[] = new int[300];                                                                      //CameFrom will eventually contain the most efficient previous step
@@ -1925,7 +1949,6 @@ public class Robot {
             openSet.remove(lowestIndex);
             if (currentIndex == goal) {
                 midDirection = starDirection;
-                //totalRotation = 0;
                 return shortestPathResult(cameFrom, currentIndex, start);
             }
             closedSet[currentIndex] = true;
@@ -1941,20 +1964,27 @@ public class Robot {
                 gScoreTemp = gScore[currentIndex] + 1;
                 if (gScoreTemp >= gScore[neighbour.get(i)]) {
                     continue;
-                } else if (starDirection == directionIndicator(currentIndex, neighbour.get(i), starDirection)) {
+                } else if (rotate == true) {
+                    if (starDirection == directionIndicator(currentIndex, neighbour.get(i), starDirection)) {
 //                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
 //                    System.out.println("true, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
+                        cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
+                        cameFrom[neighbour.get(i)] = currentIndex;
+                        gScore[neighbour.get(i)] = gScoreTemp;
+                        fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal);
+                    } else {
+//                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
+//                    System.out.println("false, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
+                        cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
+                        cameFrom[neighbour.get(i)] = currentIndex;
+                        gScore[neighbour.get(i)] = gScoreTemp;
+                        fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal) + 50;
+                    }
+                } else {
                     cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
                     cameFrom[neighbour.get(i)] = currentIndex;
                     gScore[neighbour.get(i)] = gScoreTemp;
                     fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal);
-                } else {
-//                    System.out.println("starDirection: " + starDirection + " directionIndicator: " + directionIndicator(currentIndex, neighbour.get(i), starDirection));
-//                    System.out.println("false, Neighbour: " + neighbour.get(i) + " currentIndex: " + currentIndex);
-                    cameFromDirection[neighbour.get(i)] = directionIndicator(currentIndex, neighbour.get(i), starDirection);
-                    cameFrom[neighbour.get(i)] = currentIndex;
-                    gScore[neighbour.get(i)] = gScoreTemp;
-                    fScore[neighbour.get(i)] = gScore[neighbour.get(i)] + heuristicDist(neighbour.get(i), goal) + 50;
                 }
             }
         }
