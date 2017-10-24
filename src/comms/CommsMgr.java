@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.sql.Timestamp;
 
 public class CommsMgr {
 
@@ -12,11 +13,11 @@ public class CommsMgr {
     // For communication with the Raspberry-Pi
     private static final String HOST = "192.168.2.200";
     //private static final String HOST = "localhost";
-    private static final int PORT = 1268;
+    private static final int PORT = 1269;
 
     public static final String MSG_TYPE_ARDUINO = "a";
     public static final String MSG_TYPE_ANDROID = "b";
-
+    
     private static Socket _conn = null;
 
     //private static BufferedOutputStream _bos = null;
@@ -108,10 +109,11 @@ public class CommsMgr {
 
     public boolean sendMsg(String msg, String msgType, boolean ack) {
         try {
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             String outputMsg = msgType + msg;
 
             outputMsg = String.format("%-128s", outputMsg);
-            System.out.println("Sending out msg: " + outputMsg);
+            System.out.println("["+timestamp+"]: " + "Sending out msg: " + outputMsg);
             byte[] mBytes = outputMsg.getBytes();
             _dos.write(mBytes, 0, mBytes.length);
 
@@ -130,9 +132,10 @@ public class CommsMgr {
 
     public String recvMsg() {
         try {
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             String input = _br.readLine();
             if (input != null && input.length() > 0) {
-                System.out.println(input);
+                System.out.println("["+timestamp+"]: " + input);
                 return input;
             }
 
