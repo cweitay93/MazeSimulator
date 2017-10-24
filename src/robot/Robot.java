@@ -2282,13 +2282,16 @@ public class Robot {
                     // Try to get message
                     _phyExRcvMsg = mgr.recvMsg();
                     //_bPhyExStarted = true;
+                    if (_phySpRcvMsg.length() >= 1 && _phySpRcvMsg.length()<=3 && _phySpRcvMsg.matches("[0-9]+") /*&& !_phySpRcvMsg.contains("z")*/){
+                            String midPointMsg = _phySpRcvMsg; //_phySpRcvMsg.substring(1,_phySpRcvMsg.length() - 1);
+                            int midIndex = Integer.parseInt(midPointMsg);
+                            System.out.println("midIndex: "+midIndex);
+                            int midRow = ConvertRow(midIndex) - 1;
+                            int midCol = ConvertCol(midIndex) - 1;
+                            System.out.println(_mapUI);
+                            _mapUI.addMidPoint(midRow, midCol);
 
-//                    if (testCount < 1) {
-//                        String outputMsg1 = "e";
-//                        mgr.sendMsg(outputMsg1, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                        testCount++;
-//                    }
-                    if (_phyExRcvMsg != null && _phyExRcvMsg.equals(START_PHY_EXPLORE)) {
+                    } else if (_phyExRcvMsg != null && _phyExRcvMsg.equals(START_PHY_EXPLORE)) {
                         _bPhyExStarted = true;
                         String startMsg = "e";
                         mgr.sendMsg(startMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
@@ -2402,16 +2405,16 @@ public class Robot {
                             _phySpRcvMsg = null;
 
                         } 
-                        else if ((_phySpRcvMsg.length() >= 1 && _phySpRcvMsg.length()<=3 && !_phySpRcvMsg.contains("z"))/*_phySpRcvMsg.contains("m")*/){
-                            String midPointMsg = _phySpRcvMsg; //_phySpRcvMsg.substring(1,_phySpRcvMsg.length() - 1);
-                            int midIndex = Integer.parseInt(midPointMsg);
-                            System.out.println("midIndex: "+midIndex);
-                            int midRow = ConvertRow(midIndex) - 1;
-                            int midCol = ConvertCol(midIndex) - 1;
-                            System.out.println(_mapUI);
-                            _mapUI.addMidPoint(midRow, midCol);
-
-                        }    
+//                        else if ((_phySpRcvMsg.length() >= 1 && _phySpRcvMsg.length()<=3 && !_phySpRcvMsg.contains("z"))/*_phySpRcvMsg.contains("m")*/){
+//                            String midPointMsg = _phySpRcvMsg; //_phySpRcvMsg.substring(1,_phySpRcvMsg.length() - 1);
+//                            int midIndex = Integer.parseInt(midPointMsg);
+//                            System.out.println("midIndex: "+midIndex);
+//                            int midRow = ConvertRow(midIndex) - 1;
+//                            int midCol = ConvertCol(midIndex) - 1;
+//                            System.out.println(_mapUI);
+//                            _mapUI.addMidPoint(midRow, midCol);
+//
+//                        }    
                     }
                 }
                 
@@ -2918,11 +2921,6 @@ public class Robot {
         }
 
         if (stairsCount >= 2) {
-//            if ((!isLeftWall() && _bPreviousLeftWall) || (isFrontWall() && !isLeftWall() && isRightWall()) || !isFrontWall()) {
-//                isStairs = false;
-//                stairsCount = 0;
-//            }
-//            else {
                 isStairs = true;
                 System.out.println("its true");
 //            }
