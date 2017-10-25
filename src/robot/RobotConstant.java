@@ -13,7 +13,7 @@ public final class RobotConstant {
 	
 	// Sensors default range (In grids)
 	public static final int SHORT_IR_MIN = 1;
-	public static final int SHORT_IR_MAX = 3;
+	public static final int SHORT_IR_MAX = 2;
 	
 	public static final int LONG_IR_MIN = 1;
 	public static final int LONG_IR_MAX = 5;

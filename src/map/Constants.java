@@ -24,7 +24,7 @@ public final class Constants {
 	
 	// Goal grid information
 	public static final int GOAL_GRID_ROW = 0;
-	public static final int GOAL_GRID_COL = 4;
+	public static final int GOAL_GRID_COL = 12;
 	
 	public static final Color C_GRID_LINE = Color.GRAY;
 	public static final int GRID_LINE_WEIGHT = 1;
