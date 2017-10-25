@@ -77,8 +77,9 @@ public class Robot {
     private transient static final String START_PHY_EXPLORE = "e";
     private transient String _phyExCmdMsg = null;
     private transient String _phyExSimMsg = "";
-    private transient static final int MAX_MOVES_BEFORE_CALIBRATION = 6;
+    private transient static final int MAX_MOVES_BEFORE_CALIBRATION = 3;
     private transient int _movesSinceLastCalibration = MAX_MOVES_BEFORE_CALIBRATION;
+    private transient boolean frontCalibration = true;
 
     // For physical shortest path
     private transient Timer _phySpTimer = null;
@@ -2250,7 +2251,8 @@ public class Robot {
         System.out.println("\nStarting physical exploration!");
 
         // Calculate timer intervals based on the user selected steps per second
-        _timerIntervals = ((1000 * 1000 / _stepsPerSecond) / 1000);
+//        _timerIntervals = (1000 / _stepsPerSecond);
+        _timerIntervals = 20;
         System.out.println("Steps Per Second: " + _stepsPerSecond + ", Timer Interval: " + _timerIntervals);
 
         // Calculate number of explored grids required
@@ -2286,7 +2288,7 @@ public class Robot {
                     if (!_bPhyExConnected) {
                         _phyExErrors++;
 
-                        if (_phyExErrors >= 30) {
+                        if (_phyExErrors >= 50) {
                             System.out.println("Too many errors, stopped reconnection!");
                             mgr.closeConnection();
 
@@ -2518,32 +2520,28 @@ public class Robot {
 
         if (_phyExRcvMsg != null /*|| _exploreUnexploredFlag == true*/) {
             System.out.println("arduino msg: " + _phyExRcvMsg);
-            if (_phyExRcvMsg != null && _phyExRcvMsg.contains("e")/*(_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("c"))*/) {
+            if (_phyExRcvMsg.contains("e")/*(_phyExRcvMsg.contains("w") || _phyExRcvMsg.contains("a") || _phyExRcvMsg.contains("d") || _phyExRcvMsg.contains("s") || _phyExRcvMsg.contains("c"))*/) {
                 //requestSensorReadings();
                 requestCalibration();
                 //validateCount++;
                 return;
-            } 
-//            else if (_phyExRcvMsg != null && _phyExRcvMsg.contains("c")){
-//                requestSensorReadings();
-//                return;
-//            } 
-            else if (/*(_phyExRcvMsg == null && _exploreUnexploredFlag == true) ||*/ _phyExRcvMsg != null && (_phyExRcvMsg.length() > 4)) {
-                /*if (validateCount >= 1 || _exploreUnexploredFlag == true) {*/
-                    // Sense its surroundings using actual sensor readings
-                    this.physicalSense(_phyExRcvMsg);
+            } else if (/*(_phyExRcvMsg == null && _exploreUnexploredFlag == true) || _phyExRcvMsg != null &&*/ _phyExRcvMsg.length() > 4) {
+                //if (validateCount >= 1 || _exploreUnexploredFlag == true) {
+                // Sense its surroundings using actual sensor readings
+                this.physicalSense(_phyExRcvMsg);
 
-                    _robotMap.revalidate();
-                    _robotMap.repaint();
-                    // Logic to make the next move
-                    this.physicalPossibleMove();
+                _robotMap.revalidate();
+                _robotMap.repaint();
+                // Logic to make the next move
+                this.physicalPossibleMove();
                     //validateCount = 0;
-                /*} else if(startCalibration != 0) {
-                    //requestSensorReadings();
-                    requestCalibration();
-                    startCalibration = 0;
-                }*/
-            }
+                //}
+            } 
+//            else if(/*_phyExRcvMsg != null &&*/ _phyExRcvMsg.contains("e") && startCalibration != 0) {
+//                //requestSensorReadings();
+//                requestCalibration();
+//                startCalibration = 0;
+//            }
             _phyExRcvMsg = null;
         }
     }
@@ -2646,9 +2644,9 @@ public class Robot {
 
         if (_movesSinceLastCalibration >= MAX_MOVES_BEFORE_CALIBRATION) {
             if (isLeftWall()) {
-                //requestCalibration();
+                requestCalibration();
                 _movesSinceLastCalibration = 0;
-                //return;
+                return;
             }
         }
         // Robot reached goal zone
@@ -2817,189 +2815,198 @@ public class Robot {
         boolean leftWall = isLeftWall();
         boolean rightWall = isRightWall();
         
-//        if(!isStairs){
-//            checkStairs(currentRow, currentCol);
-//        }
-//        if(isStairs) {
-//            if(stairsTurnRight == false){
-//                rotateRight();
-//                stairsTurnRight = true;
-//                _phyExCmdMsg = "D";
-//                mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                _phyExSimMsg = "";
-//                return;
-//            }
-//            
-//            if (!frontWall && stairsTurnLeft == false) {
-//                if (stairsMove < stairsCount) {
-//                    moveForward();
-//                    stairsMove++;
-//                    _phyExCmdMsg = "W";
-//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                    _phyExSimMsg = "";
-//                    return;
-//                } else {
-//                    if(leftWall){
-//                        isStairs = false;
-//                        stairsTurnRight = false;
-//                        stairsTurnLeft = false;
-//                        stairsCount = 0;
-//                        stairsMove = 0;
-//                        if(frontWall && rightWall){
-//                            rotate180();
-//                            _phyExCmdMsg = "S";
-//                        }
-//                        else if(leftWall && !frontWall){
-//                            moveForward();
-//                            _phyExCmdMsg = "W";
-//                        }
-//                        else {
-//                            rotateRight();
-//                            _phyExCmdMsg = "D";
-//                        }
-//                        mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                        String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                        _phyExSimMsg = "";
-//                        return;
-//                    }
-//                    _phyExCmdMsg = "A";
-//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                    _phyExSimMsg = "";
-//                    rotateLeft();
-//                    stairsTurnLeft = true;
-//                    stairsMove = 0;
-//                    return;
-//                }
-//            } else {
-//                if(frontWall && stairsMove == 0){
-//                    rotateRight();
-//                    _phyExCmdMsg = "D";
-//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                    _phyExSimMsg = "";
-//                    isStairs = false;
-//                    stairsTurnRight = false;
-//                    stairsTurnLeft = false;
-//                    stairsCount = 0;
-//                    stairsMove = 0;
-//                    return;
-//                }
-//                if(stairsTurnLeft == false){
-//                    if(leftWall){
-//                        isStairs = false;
-//                        stairsTurnRight = false;
-//                        stairsTurnLeft = false;
-//                        stairsCount = 0;
-//                        stairsMove = 0;
-//                        if(frontWall && rightWall){
-//                            rotate180();
-//                            _phyExCmdMsg = "S";
-//                        }
-//                        else if(leftWall && !frontWall){
-//                            moveForward();
-//                            _phyExCmdMsg = "W";
-//                        }
-//                        else{
-//                            rotateRight();
-//                            _phyExCmdMsg = "D";
-//                        }
-//                        mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                        String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                        _phyExSimMsg = "";
-//                        return;
-//                    }
-//                    rotateLeft();
-//                    _phyExCmdMsg = "A";
-//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                    _phyExSimMsg = "";
-//                    stairsTurnLeft = true;
-//                    stairsMove = 0;
-//                    return;
-//                }
-//                
-//                if (!frontWall && stairsTurnLeft == true) {
-//                    if (stairsMove < stairsCount) {
-//                        moveForward();
-//                        _phyExCmdMsg = "W";
-//                        mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                        String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                        _phyExSimMsg = "";
-//                        stairsMove++;
-//                    } else {
-//                        isStairs = false;
-//                        stairsTurnRight = false;
-//                        stairsTurnLeft = false;
-//                        stairsCount = 0;
-//                        stairsMove = 0;
-//                        if(frontWall && rightWall){
-//                            rotate180();
-//                            _phyExCmdMsg = "S";
-//                        }
-//                        else if(leftWall && !frontWall){
-//                            moveForward();
-//                            _phyExCmdMsg = "W";
-//                        }
-//                        else {
-//                            rotateRight();
-//                            _phyExCmdMsg = "D";
-//                        }
-//                    }
-//                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                    _phyExSimMsg = "";
-//                    return;
-//                } else {
-//                    isStairs = false;
-//                    stairsTurnRight = false;
-//                    stairsTurnLeft = false;
-//                    stairsCount = 0;
-//                    stairsMove = 0;
-//                    if(frontWall && rightWall){
-//                            rotate180();
-//                            _phyExCmdMsg = "S";
-//                        }
-//                        else if(leftWall && !frontWall){
-//                            moveForward();
-//                            _phyExCmdMsg = "W";
-//                        }
-//                        else {
-//                            rotateRight();
-//                            _phyExCmdMsg = "D";
-//                        }
-//                }
-//                mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
-//                String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
-//                mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
-//                _phyExSimMsg = "";
-//                return;
-//            }
-//        }
+        if(frontWall && frontCalibration){
+            requestCalibration();
+            frontCalibration = false;
+            return;
+        }
+        
+        if(!isStairs){
+            checkStairs(currentRow, currentCol);
+        }
+        if(isStairs) {
+            if(stairsTurnRight == false){
+                rotateRight();
+                stairsTurnRight = true;
+                _phyExCmdMsg = "D";
+                mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                _phyExSimMsg = "";
+                return;
+            }
+            
+            if (!frontWall && stairsTurnLeft == false) {
+                if (stairsMove < stairsCount) {
+                    moveForward();
+                    stairsMove++;
+                    _phyExCmdMsg = "W";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _phyExSimMsg = "";
+                    return;
+                } else {
+                    if(leftWall){
+                        isStairs = false;
+                        stairsTurnRight = false;
+                        stairsTurnLeft = false;
+                        stairsCount = 0;
+                        stairsMove = 0;
+                        if(frontWall && rightWall){
+                            rotate180();
+                            _phyExCmdMsg = "S";
+                        }
+                        else if(leftWall && !frontWall){
+                            moveForward();
+                            _phyExCmdMsg = "W";
+                        }
+                        else {
+                            rotateRight();
+                            _phyExCmdMsg = "D";
+                        }
+                        mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                        _phyExSimMsg = "";
+                        return;
+                    }
+                    _phyExCmdMsg = "A";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _phyExSimMsg = "";
+                    rotateLeft();
+                    stairsTurnLeft = true;
+                    stairsMove = 0;
+                    return;
+                }
+            } else {
+                if(frontWall && stairsMove == 0){
+                    rotateRight();
+                    _phyExCmdMsg = "D";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _phyExSimMsg = "";
+                    isStairs = false;
+                    stairsTurnRight = false;
+                    stairsTurnLeft = false;
+                    stairsCount = 0;
+                    stairsMove = 0;
+                    return;
+                }
+                if(stairsTurnLeft == false){
+                    if(leftWall){
+                        isStairs = false;
+                        stairsTurnRight = false;
+                        stairsTurnLeft = false;
+                        stairsCount = 0;
+                        stairsMove = 0;
+                        if(frontWall && rightWall){
+                            rotate180();
+                            _phyExCmdMsg = "S";
+                        }
+                        else if(leftWall && !frontWall){
+                            moveForward();
+                            _phyExCmdMsg = "W";
+                        }
+                        else{
+                            rotateRight();
+                            _phyExCmdMsg = "D";
+                        }
+                        mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                        _phyExSimMsg = "";
+                        return;
+                    }
+                    rotateLeft();
+                    _phyExCmdMsg = "A";
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _phyExSimMsg = "";
+                    stairsTurnLeft = true;
+                    stairsMove = 0;
+                    return;
+                }
+                
+                if (!frontWall && stairsTurnLeft == true) {
+                    if (stairsMove < stairsCount) {
+                        moveForward();
+                        _phyExCmdMsg = "W";
+                        mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                        String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                        mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                        _phyExSimMsg = "";
+                        stairsMove++;
+                    } else {
+                        isStairs = false;
+                        stairsTurnRight = false;
+                        stairsTurnLeft = false;
+                        stairsCount = 0;
+                        stairsMove = 0;
+                        if(frontWall && rightWall){
+                            rotate180();
+                            _phyExCmdMsg = "S";
+                        }
+                        else if(leftWall && !frontWall){
+                            moveForward();
+                            _phyExCmdMsg = "W";
+                        }
+                        else {
+                            rotateRight();
+                            _phyExCmdMsg = "D";
+                        }
+                    }
+                    mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                    String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                    mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                    _phyExSimMsg = "";
+                    return;
+                } else {
+                    isStairs = false;
+                    stairsTurnRight = false;
+                    stairsTurnLeft = false;
+                    stairsCount = 0;
+                    stairsMove = 0;
+                    if(frontWall && rightWall){
+                            rotate180();
+                            _phyExCmdMsg = "S";
+                        }
+                        else if(leftWall && !frontWall){
+                            moveForward();
+                            _phyExCmdMsg = "W";
+                        }
+                        else {
+                            rotateRight();
+                            _phyExCmdMsg = "D";
+                        }
+                }
+                mgr.sendMsg(_phyExCmdMsg, CommsMgr.MSG_TYPE_ARDUINO, false);
+                String outputMsg = _phyExCmdMsg + "," + _phyExSimMsg;
+                mgr.sendMsg(outputMsg, CommsMgr.MSG_TYPE_ANDROID, false);
+                _phyExSimMsg = "";
+                return;
+            }
+        }
 
         // (No leftWall AND previousLeftWall) OR (frontWall AND No leftWall AND rightWall)
         if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
             rotateLeft();
+            frontCalibration = true;
             _phyExCmdMsg = "A";
 
         } // (frontWall AND No rightWall)
         else if (frontWall && !rightWall) {
             rotateRight();
+            frontCalibration = true;
             _phyExCmdMsg = "D";
         } // (frontWall AND leftWall AND rightWall)
         else if (frontWall && leftWall && rightWall) {
             rotate180();
+            frontCalibration = true;
             _phyExCmdMsg = "S";
         } else {
             moveForward();
