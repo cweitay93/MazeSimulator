@@ -223,6 +223,7 @@ public class Grid {
 	public void markAsVisited() {
 		_bExplored = true;
 		_bVisited = true;
+                _truthValue = 9.99;
 	}
 	
 	/**
