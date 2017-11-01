@@ -1754,7 +1754,7 @@ public class Robot {
 
         newRobotMapPosCol += (direction == DIRECTION.WEST) ? -1
                 : (direction == DIRECTION.EAST) ? 1 : 0;
-        if(newRobotMapPosRow < 0 || newRobotMapPosRow >= Constants.MAP_ROWS || newRobotMapPosCol < 0 || newRobotMapPosCol >= Constants.MAP_COLS)
+        if(newRobotMapPosRow < 0 || newRobotMapPosRow >= (Constants.MAP_ROWS-2) || newRobotMapPosCol < 0 || newRobotMapPosCol >= (Constants.MAP_COLS-2))
             return 0;
         if(testLeftWall(newRobotMapPosRow,newRobotMapPosCol) && !testFrontWall(newRobotMapPosRow,newRobotMapPosCol) /* && !withinStartZone(newRobotMapPosRow,newRobotMapPosCol)*/){
             return testForward(newRobotMapPosRow,newRobotMapPosCol) + 1;
@@ -3062,6 +3062,13 @@ public class Robot {
                     btCalibrate = false;
                 } else{
                     if(!isLeftWall()){
+                        rotateLeft();
+                        _phyExCmdMsg = "A";
+                        initBackTrack = false;
+                        enableBackTrack = false;
+                    } else if(isFrontWall()){
+                        rotateRight();
+                        _phyExCmdMsg = "D";
                         initBackTrack = false;
                         enableBackTrack = false;
                     } else {
@@ -3463,7 +3470,13 @@ public class Robot {
                 tempCol = currentCol - 2;
                 for (int i = 0; i < RobotConstant.ROBOT_SIZE; i++) {    
                     if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
-                        if (_grids[tempRow + i][tempCol].isObstacle()) {
+//                        if((tempRow + i) > 20 || (tempRow + i) < 0){
+//                            if (i == 2) {
+//                                return true;
+//                            }
+//                        }
+//                        else 
+                        if (_grids[tempRow + i][tempCol].isObstacle() ) {
                             if (i == 2) {
                                 return true;
                             }
