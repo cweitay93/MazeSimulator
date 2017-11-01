@@ -74,7 +74,7 @@ public class Robot {
     private transient static final String START_PHY_EXPLORE = "e";
     private transient String _phyExCmdMsg = null;
     private transient String _phyExSimMsg = "";
-    private transient static final int MAX_MOVES_BEFORE_CALIBRATION = 9;
+    private transient static final int MAX_MOVES_BEFORE_CALIBRATION = 10;
     private transient int _movesSinceLastCalibration = MAX_MOVES_BEFORE_CALIBRATION;
     private transient boolean frontCalibration = true;
 
@@ -636,16 +636,13 @@ public class Robot {
         if ((!leftWall && _bPreviousLeftWall) || (frontWall && !leftWall && rightWall)) {
             if(checkLeftEnd()){
                 if(frontWall){
-                    System.out.println("1");
                     rotateRight();
                     return;
                 } else {
                     moveForward();
-                    System.out.println("1.5");
                     return;
                 }
             }
-            System.out.println("2");
             rotateLeft();
 //            System.out.println("2");
 //            rotateLeft();
@@ -657,13 +654,14 @@ public class Robot {
             rotate180();
             enableBackTrack = true;
         } else {
-            if(checkFrontEnd()){
-                if(!rightWall){
-                    rotateRight();
-                    return;
-                }
-            }
-            moveForward();
+//            if(checkFrontEnd()){
+//                if(!rightWall && leftWall){
+//                    rotateRight();
+//                    return;
+//                }
+//            }
+            //moveForward();
+            Burst();
         }
 
         // Save current leftWall state into _bPreviousLeftWall
@@ -1625,6 +1623,126 @@ public class Robot {
 
         markCurrentPosAsVisited();
         //_phyExCmdMsg = "W";
+    }
+    
+    public int testBurst(int currentRow, int currentCol, int sensorRow, int sensorCol) {
+        int newRobotMapPosRow = currentRow;
+        int newRobotMapPosCol = currentCol;
+        Grid[][] _grids = _robotMap.getMapGrids();
+        double truthValue = 0;
+        
+        int rightSenseRow = sensorRow;
+        int rightSenseCol = sensorCol;
+        DIRECTION rightSenseDir = _sensors.get(5).getSensorDirection();
+
+        newRobotMapPosRow += (direction == DIRECTION.NORTH) ? -1
+                : (direction == DIRECTION.SOUTH) ? 1 : 0;
+
+        newRobotMapPosCol += (direction == DIRECTION.WEST) ? -1
+                : (direction == DIRECTION.EAST) ? 1 : 0;
+        
+        rightSenseRow += (direction == DIRECTION.NORTH) ? -1
+                : (direction == DIRECTION.SOUTH) ? 1 : 0;
+
+        rightSenseCol += (direction == DIRECTION.WEST) ? -1
+                : (direction == DIRECTION.EAST) ? 1 : 0;
+        
+        switch(direction){
+            case NORTH:
+            case WEST:
+                for(int i = 0; i < 3; i++)
+                    truthValue += _grids[newRobotMapPosRow + i][newRobotMapPosCol].getTruthValue();
+                for (int j = 1; j < 3; j++)
+                    truthValue += _grids[newRobotMapPosRow][newRobotMapPosCol + j].getTruthValue();
+                break;
+            case SOUTH:
+            case EAST:
+                for(int i = 0; i < 3; i++)
+                    truthValue += _grids[newRobotMapPosRow + i][newRobotMapPosCol + 2].getTruthValue();
+                for (int j = 1; j < 3; j++) {
+                    truthValue += _grids[newRobotMapPosRow + 2][newRobotMapPosCol + j].getTruthValue();
+                }
+                break;
+        }
+        
+        if(newRobotMapPosRow < 0 || newRobotMapPosRow >= Constants.MAP_ROWS || newRobotMapPosCol < 0 || newRobotMapPosCol >= Constants.MAP_COLS)
+            return 0;
+        if(testLeftWall(newRobotMapPosRow,newRobotMapPosCol) && !testFrontWall(newRobotMapPosRow,newRobotMapPosCol) && (truthValue >= 24.0||testExplored(rightSenseRow,rightSenseCol,rightSenseDir))){
+            if(newRobotMapPosRow == Constants.START_GRID_ROW){
+                if(!testExplored(rightSenseRow,rightSenseCol,rightSenseDir))
+                    return 0;
+            }
+            return testBurst(newRobotMapPosRow,newRobotMapPosCol,rightSenseRow,rightSenseCol) + 1;
+        } else return 0;
+    }
+    
+    public boolean testExplored(int sensorRow, int sensorCol, DIRECTION sensorDir) {
+        Grid[][] _grids = _robotMap.getMapGrids();
+        int tempRow, tempCol;
+        
+        switch (sensorDir) {
+            case NORTH:
+                for (int i = 0; i < RobotConstant.LONG_IR_MAX; i++) {
+                    tempRow = (sensorRow - 1) - i;
+                    tempCol = sensorCol;
+                    if ((tempRow >= 0 && tempRow < Constants.MAP_ROWS) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                        if (_grids[tempRow][tempCol].isExplored() && _grids[tempRow][tempCol].isObstacle()) {
+                            return true;
+                        } else if (!_grids[tempRow][tempCol].isExplored()) {
+                            return false;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+                break;
+            case SOUTH:
+                for (int i = 0; i < RobotConstant.LONG_IR_MAX; i++) {
+                    tempRow = (sensorRow + 3) + i;
+                    tempCol = sensorCol;
+                    if ((tempRow >= 0 && tempRow < Constants.MAP_ROWS) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                        if (_grids[tempRow][tempCol].isExplored() && _grids[tempRow][tempCol].isObstacle()) {
+                            return true;
+                        } else if (!_grids[tempRow][tempCol].isExplored()) {
+                            return false;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+                break;
+            case EAST:
+                for (int i = 0; i < RobotConstant.LONG_IR_MAX; i++) {
+                    tempRow = sensorRow;
+                    tempCol = (sensorCol + 3) + i;
+                    if ((tempRow >= 0 && tempRow < Constants.MAP_ROWS) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                        if (_grids[tempRow][tempCol].isExplored() && _grids[tempRow][tempCol].isObstacle()) {
+                            return true;
+                        } else if (!_grids[tempRow][tempCol].isExplored()) {
+                            return false;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+                break;
+            case WEST:
+                for (int i = 0; i < RobotConstant.LONG_IR_MAX; i++) {
+                    tempRow = sensorRow;
+                    tempCol = (sensorCol - 1) - i;
+                    if ((tempRow >= 0 && tempRow < Constants.MAP_ROWS) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
+                        if (_grids[tempRow][tempCol].isExplored() && _grids[tempRow][tempCol].isObstacle()) {
+                            return true;
+                        } else if (!_grids[tempRow][tempCol].isExplored()) {
+                            return false;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+                break;
+        }
+        return true;
     }
     
     public int testForward(int currentRow, int currentCol) {
@@ -3235,8 +3353,9 @@ public class Robot {
             _phyExCmdMsg = "S";
             enableBackTrack = true;
         } else {
-            moveForward();
-            _phyExCmdMsg = "W";
+            Burst();
+//            moveForward();
+//            _phyExCmdMsg = "W";
         }
 
         // Save current leftWall state into _bPreviousLeftWall
@@ -3394,6 +3513,71 @@ public class Robot {
                 return false;
             default:
                 return false;
+        }
+    }
+    
+    public void Burst(){
+        int rightSenseRow = _sensors.get(5).getSensorPosRow();
+        int rightSenseCol = _sensors.get(5).getSensorPosCol();
+        int forwardSteps = testBurst(currentRow,currentCol,rightSenseRow,rightSenseCol);
+        if(forwardSteps>4){
+            forwardSteps = 4;
+        }
+        if(forwardSteps<1){
+            forwardSteps = 1;
+        }
+        switch(forwardSteps){
+            case 1:
+                moveForward();
+                _phyExCmdMsg = "W";
+                break;
+            case 2:
+                moveForward();
+                moveForward();
+                _phyExCmdMsg = "T";
+                break;
+            case 3:
+                moveForward();
+                moveForward();
+                moveForward();
+                _phyExCmdMsg = "Y";
+                break;
+            case 4:
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                _phyExCmdMsg = "U";
+                break;
+            case 5:
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                _phyExCmdMsg = "I";
+                break;
+            case 6:
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                _phyExCmdMsg = "O";
+                break;
+            case 7:
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                moveForward();
+                _phyExCmdMsg = "P";
+                break;
+            default:
+                break;
         }
     }
     

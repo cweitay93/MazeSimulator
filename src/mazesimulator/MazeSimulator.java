@@ -276,45 +276,6 @@ public class MazeSimulator extends JPanel {
         });
         mainButtons.add(btn_resetMap);
 
-        JButton btn_testMDF = new JButton("Test MDF");
-        btn_testMDF.setFont(new Font("Arial", Font.BOLD, 18));
-        btn_testMDF.setMargin(new Insets(10, 15, 10, 15));
-        btn_testMDF.setFocusPainted(false);
-
-        btn_testMDF.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                if (new String(robotMap.generateMDFStringPart1()).equals(mapUI.generateMapString())) {
-                    System.out.println("True");
-                } else {
-                    System.out.println("False");
-                }
-            }
-        });
-        mainButtons.add(btn_testMDF);
-
-//        JButton btn_TimeLimited = new JButton("Time Limited Toggle");
-//        btn_TimeLimited.setFont(new Font("Arial", Font.BOLD, 18));
-//        btn_TimeLimited.setMargin(new Insets(10, 15, 10, 15));
-//        btn_TimeLimited.setFocusPainted(false);
-//
-//        btn_TimeLimited.addMouseListener(new MouseAdapter() {
-//            public void mousePressed(MouseEvent e) {
-//                roboCop.setTimeLimited();
-//            }
-//        });
-//        mainButtons.add(btn_TimeLimited);
-//        
-//        JButton btn_CovLimited = new JButton("Coverage Limited Toggle");
-//        btn_CovLimited.setFont(new Font("Arial", Font.BOLD, 18));
-//        btn_CovLimited.setMargin(new Insets(10, 15, 10, 15));
-//        btn_CovLimited.setFocusPainted(false);
-//
-//        btn_CovLimited.addMouseListener(new MouseAdapter() {
-//            public void mousePressed(MouseEvent e) {
-//                roboCop.setCoverageLimited();
-//            }
-//        });
-//        mainButtons.add(btn_CovLimited);
         JButton btn_SetMid = new JButton("Set Mid Point");
         btn_SetMid.setFont(new Font("Arial", Font.BOLD, 18));
         btn_SetMid.setMargin(new Insets(10, 15, 10, 15));
