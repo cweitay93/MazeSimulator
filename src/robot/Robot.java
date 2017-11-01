@@ -2964,7 +2964,7 @@ public class Robot {
         leftBackReading = Float.parseFloat(sensorReadings[7]);
         int sensorIndex = 0;
         // Weightage of the sensors
-        double[] sensorWeightage = {1.5, 1.5, 3.0, 3.0, 3.0, 1.5};
+        double[] sensorWeightage = {1.5, 1.5, 3.0, 3.0, 3.0, 1.0};
 
         for (Sensor s : _sensors) {
 
@@ -3030,14 +3030,12 @@ public class Robot {
                     //robotMapGrids[gridRow][gridCol].setExplored(true);
                     if (!_robotMap.isStartZone(gridRow, gridCol) && !_robotMap.isGoalZone(gridRow, gridCol)) {
                         if ((gridRow >= 0 && gridRow < 20) && (gridCol >= 0 && gridCol < 15)) {
-                            if (!robotMapGrids[gridRow][gridCol].isObstacle()) {
-                                robotMapGrids[gridRow][gridCol].markAsObstacle(truthValue);
-                                if(robotMapGrids[gridRow][gridCol].getPhantomGrid()){
-                                    robotMapGrids[gridRow][gridCol].setPhantomGrid(false);
-                                    _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
-                                }
-//                                _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
+                            robotMapGrids[gridRow][gridCol].markAsObstacle(truthValue);
+                            if (robotMapGrids[gridRow][gridCol].getPhantomGrid()) {
+                                robotMapGrids[gridRow][gridCol].setPhantomGrid(false);
+                                _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
                             }
+//                                _phyExSimMsg += ((gridRow * 15) + gridCol) + ",";
                         }
                     }
                     break;
@@ -3064,6 +3062,7 @@ public class Robot {
                     if(!isLeftWall()){
                         rotateLeft();
                         _phyExCmdMsg = "A";
+                        _bPreviousLeftWall = false;
                         initBackTrack = false;
                         enableBackTrack = false;
                     } else if(isFrontWall()){
@@ -3533,8 +3532,8 @@ public class Robot {
         int rightSenseRow = _sensors.get(5).getSensorPosRow();
         int rightSenseCol = _sensors.get(5).getSensorPosCol();
         int forwardSteps = testBurst(currentRow,currentCol,rightSenseRow,rightSenseCol);
-        if(forwardSteps>4){
-            forwardSteps = 4;
+        if(forwardSteps>5){
+            forwardSteps = 5;
         }
         if(forwardSteps<1){
             forwardSteps = 1;
@@ -3675,8 +3674,8 @@ public class Robot {
 
         switch (direction) {
             case NORTH:
-                for(int i = 0; i < 3; i++){
-                    for(int k = i; k < 3; k++){
+                for(int i = 0; i <= 3; i++){
+                    for(int k = i; k <= 3; k++){
                         tempRow = (currentRow - 1) - i;
                         tempCol = currentCol + k;
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
@@ -3694,8 +3693,8 @@ public class Robot {
                 }
                 break;
             case EAST:
-                for (int i = 0; i < 3; i++) {
-                    for (int k = i; k < 3; k++) {
+                for (int i = 0; i <= 3; i++) {
+                    for (int k = i; k <= 3; k++) {
                         tempRow = currentRow + k;
                         tempCol = (currentCol + RobotConstant.ROBOT_SIZE) + i;
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
@@ -3714,8 +3713,8 @@ public class Robot {
                 break;
                 
             case SOUTH:
-                for (int i = 0; i < 3; i++) {
-                    for (int k = i; k < 3; k++) {
+                for (int i = 0; i <= 3; i++) {
+                    for (int k = i; k <= 3; k++) {
                         tempRow = (currentRow + RobotConstant.ROBOT_SIZE) + i;
                         tempCol = (currentCol + 2) - k;
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
@@ -3734,8 +3733,8 @@ public class Robot {
                 break;
                 
             case WEST:
-                for (int i = 0; i < 3; i++) {
-                    for (int k = i; k < 3; k++) {
+                for (int i = 0; i <= 3; i++) {
+                    for (int k = i; k <= 3; k++) {
                         tempRow = (currentRow + 2) - k;
                         tempCol = (currentCol - 1) - i;
                         if ((tempRow >= 0 && (tempRow < Constants.MAP_ROWS)) && (tempCol >= 0 && tempCol < Constants.MAP_COLS)) {
